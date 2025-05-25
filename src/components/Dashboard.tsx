@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Plus, Calendar, Clock, Mood, FileText, Link as LinkIcon } from 'lucide-react';
+import { Plus, Calendar, Clock, Smile, FileText, Link as LinkIcon } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import EntryModal from './EntryModal';
@@ -107,7 +107,7 @@ const Dashboard = () => {
                     })}
                   </div>
                   <Badge className={moodColors[entry.mood as keyof typeof moodColors]}>
-                    <Mood className="w-3 h-3 mr-1" />
+                    <Smile className="w-3 h-3 mr-1" />
                     {entry.mood}
                   </Badge>
                 </div>
