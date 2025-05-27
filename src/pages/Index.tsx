@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect } from 'react';
-import Sidebar from '../components/Sidebar';
+import Sidebar from '../components/Sidebar'; // This will now correctly point to ../components/Sidebar/index.tsx
 import Dashboard from '../components/Dashboard';
 import Storybook from '../components/Storybook';
 import AIChat from '../components/AIChat';
