@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import Dashboard from '../components/Dashboard';
 import Storybook from '../components/Storybook';
@@ -15,13 +15,42 @@ const Index = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [user, setUser] = useState(null);
 
+  // Check for authentication token on component mount
+  useEffect(() => {
+    const authToken = localStorage.getItem('auth_token');
+    if (authToken) {
+      // If token exists, set authenticated state to true
+      // You might want to validate the token with your backend here
+      setIsAuthenticated(true);
+      
+      // Try to get user data from localStorage if available
+      const userData = localStorage.getItem('user_data');
+      if (userData) {
+        try {
+          setUser(JSON.parse(userData));
+        } catch (error) {
+          console.error('Error parsing user data from localStorage:', error);
+        }
+      }
+    }
+  }, []);
+
   const handleLogin = (userData: any) => {
+    // Save auth token and user data to localStorage
+    if (userData) {
+      localStorage.setItem('user_data', JSON.stringify(userData));
+    }
+    
     setUser(userData);
     setIsAuthenticated(true);
     setShowAuthModal(false);
   };
 
   const handleLogout = () => {
+    // Clear authentication data from localStorage
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_data');
+    
     setUser(null);
     setIsAuthenticated(false);
     setActiveSection('dashboard');

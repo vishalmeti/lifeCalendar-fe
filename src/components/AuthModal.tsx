@@ -40,17 +40,19 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
       }
 
       let response;
-      
+      let user;
       if (isLogin) {
         response = await userApiService.login(email, password);
+        user = await userApiService.getCurrentUser();
       } else {
         response = await userApiService.register(name, email, password, confirmPassword);
+        user = await userApiService.getCurrentUser();
       }
             
       // Pass the user data to the parent component
       
       if (response.status === 200){
-        onLogin(response.user);
+        onLogin(user.data);
         toast({
           title: isLogin ? "Signed in successfully!" : "Account created successfully!",
           description: `Welcome back !`,

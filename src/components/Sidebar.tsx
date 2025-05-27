@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Calendar, BookOpen, MessageCircle, User, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
@@ -52,7 +53,7 @@ const Sidebar = ({ activeSection, onSectionChange, user, onLogout }: SidebarProp
             <User className="w-4 h-4 text-indigo-600" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-gray-900">{user?.name || 'User'}</p>
+            <p className="text-sm font-medium text-gray-900">{user?.username || 'User'}</p>
             <p className="text-xs text-gray-500">{user?.email || 'user@example.com'}</p>
           </div>
         </div>

@@ -46,7 +46,7 @@ export const userApiService = {
 
   // Get current user profile
   getCurrentUser: () => {
-    return apiService.get<UserResponse>('/user/profile');
+    return apiService.get<UserResponse>('/auth/me');
   },
 
   // Update user profile
