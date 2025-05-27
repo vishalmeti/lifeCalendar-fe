@@ -7,13 +7,21 @@ import Storybook from '../components/Storybook';
 import AIChat from '../components/AIChat';
 import AuthModal from '../components/AuthModal';
 import { Button } from '../components/ui/button';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, Menu } from 'lucide-react'; // Import Menu icon
+import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [user, setUser] = useState(null);
+  const isMobile = useIsMobile(); // Use the hook
+  const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile); // Sidebar open by default on desktop, closed on mobile
+
+  // Update sidebar state when isMobile changes
+  useEffect(() => {
+    setIsSidebarOpen(!isMobile);
+  }, [isMobile]);
 
   // Check for authentication token on component mount
   useEffect(() => {
@@ -104,16 +112,38 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar 
-        activeSection={activeSection} 
-        onSectionChange={setActiveSection}
+    <div className="max-h-screen bg-gray-50 flex relative"> {/* Added relative for potential overlay */}
+      <Sidebar
+        activeSection={activeSection}
+        onSectionChange={(section) => {
+          setActiveSection(section);
+          if (isMobile) setIsSidebarOpen(false); // Close sidebar on section change on mobile
+        }}
         user={user}
         onLogout={handleLogout}
+        isOpen={isSidebarOpen} // Pass isOpen state
+        onClose={() => setIsSidebarOpen(false)} // Pass onClose handler
       />
-      
-      <main className="flex-1 overflow-auto">
-        <div className="p-6">
+
+      {isMobile && isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden" // Overlay for mobile
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      <main className="flex-1 h-[100vh] overflow-auto">
+        {isMobile && !isSidebarOpen && ( // Button to toggle sidebar on mobile, only show if sidebar is closed
+          <Button
+            variant="ghost"
+            size="icon"
+            className="fixed top-4 left-4 z-30 md:hidden" // Positioned for mobile, ensure it's under the sidebar when open
+            onClick={() => setIsSidebarOpen(true)}
+          >
+            <Menu className="h-6 w-6" />
+          </Button>
+        )}
+        <div className={`p-6 h-full scroll-m-0 ${isMobile ? 'pt-16' : ''}`}> {/* Adjust padding top for mobile if menu button is present */}
           {renderContent()}
         </div>
       </main>

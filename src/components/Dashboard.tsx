@@ -1,20 +1,9 @@
-
 import { useState } from 'react';
-import { Plus, Calendar, Clock, Smile, FileText, Link as LinkIcon } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Plus } from 'lucide-react';
 import EntryModal from './EntryModal';
-import { Badge } from './ui/badge';
-
-interface Entry {
-  id: string;
-  date: string;
-  meetings: string[];
-  tasks: { caption: string; url?: string }[];
-  mood: string;
-  notes: string;
-  aiSummary: string;
-}
+import DashboardHeader from './dashboard/DashboardHeader';
+import EntryCard, { type Entry } from './dashboard/EntryCard'; // Import Entry type
+import NoEntries from './dashboard/NoEntries';
 
 const Dashboard = () => {
   const [entries, setEntries] = useState<Entry[]>([
@@ -75,146 +64,28 @@ const Dashboard = () => {
     setEntries(entries.filter(entry => entry.id !== entryId));
   };
 
+  const openNewEntryModal = () => {
+    setEditingEntry(null);
+    setShowEntryModal(true);
+  };
+
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Daily Entries</h1>
-          <p className="text-gray-600">Track your daily activities and reflect on your journey</p>
-        </div>
-        <Button
-          onClick={() => setShowEntryModal(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          New Entry
-        </Button>
-      </div>
+    <div className="container mx-auto p-4 md:p-6 lg:max-w-4xl">
+      <DashboardHeader onNewEntryClick={openNewEntryModal} />
 
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {entries.map((entry) => (
-          <Card key={entry.id} className="border-l-4 border-l-indigo-500 hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center text-gray-600">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    {new Date(entry.date).toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </div>
-                  <Badge className={moodColors[entry.mood as keyof typeof moodColors]}>
-                    <Smile className="w-3 h-3 mr-1" />
-                    {entry.mood}
-                  </Badge>
-                </div>
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEditEntry(entry)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteEntry(entry.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-6">
-              {/* AI Summary - Prominent Display */}
-              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border-l-4 border-l-indigo-400">
-                <h3 className="font-semibold text-indigo-900 mb-2 flex items-center">
-                  <FileText className="w-4 h-4 mr-2" />
-                  AI Summary
-                </h3>
-                <p className="text-indigo-800 leading-relaxed">{entry.aiSummary}</p>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Meetings */}
-                {entry.meetings.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-                      <Clock className="w-4 h-4 mr-2" />
-                      Meetings
-                    </h3>
-                    <ul className="space-y-2">
-                      {entry.meetings.map((meeting, index) => (
-                        <li key={index} className="bg-gray-50 p-3 rounded-lg">
-                          {meeting}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Tasks */}
-                {entry.tasks.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-                      <FileText className="w-4 h-4 mr-2" />
-                      Tasks
-                    </h3>
-                    <ul className="space-y-2">
-                      {entry.tasks.map((task, index) => (
-                        <li key={index} className="bg-gray-50 p-3 rounded-lg">
-                          <div className="flex items-center justify-between">
-                            <span>{task.caption}</span>
-                            {task.url && (
-                              <a
-                                href={task.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-indigo-600 hover:text-indigo-700"
-                              >
-                                <LinkIcon className="w-4 h-4" />
-                              </a>
-                            )}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-
-              {/* Notes */}
-              {entry.notes && (
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Journal Notes</h3>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-gray-700 leading-relaxed">{entry.notes}</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <EntryCard
+            key={entry.id}
+            entry={entry}
+            moodColors={moodColors}
+            onEdit={handleEditEntry}
+            onDelete={handleDeleteEntry}
+          />
         ))}
 
         {entries.length === 0 && (
-          <div className="text-center py-12">
-            <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No entries yet</h3>
-            <p className="text-gray-500 mb-4">Start your reflection journey by creating your first daily entry</p>
-            <Button
-              onClick={() => setShowEntryModal(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Create First Entry
-            </Button>
-          </div>
+          <NoEntries onNewEntryClick={openNewEntryModal} />
         )}
       </div>
 
