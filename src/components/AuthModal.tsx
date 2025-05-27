@@ -44,18 +44,17 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
       } else {
         response = await userApiService.register(name, email, password, confirmPassword);
       }
-      
-      // Store the auth token
-      localStorage.setItem('auth_token', response.token);
-      
+            
       // Pass the user data to the parent component
-      onLogin(response.user);
       
-      toast({
+      if (response.status === 200){
+        onLogin(response.user);
+        toast({
         title: isLogin ? "Signed in successfully!" : "Account created successfully!",
         description: `Welcome ${response.user.name}`,
         variant: "default",
       });
+      }
     } catch (error: any) {
       console.error('Authentication error:', error);
       toast({

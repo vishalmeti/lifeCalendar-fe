@@ -16,16 +16,31 @@ interface AuthResponse {
 export const userApiService = {
   // Login user
   login: (email: string, password: string) => {
-    return apiService.post<AuthResponse>('/auth/login', { email, password });
+    const resp = apiService.post<AuthResponse>('/auth/login', { email, password });
+    return resp.then(response => {
+      if (response.status === 200) {
+        // Store token in local storage
+        localStorage.setItem('auth_token', response.data.token);
+      }
+      return response;
+    });
   },
 
   // Register user
   register: (name: string, email: string, password: string, confirm_password: string) => {
-    return apiService.post<AuthResponse>('/auth/register', {
+    const resp = apiService.post<AuthResponse>('/auth/register', {
       'username':name,
       'email':email,
       'password':password,
       'confirmpassword': confirm_password,
+    });
+
+    return resp.then(response => {
+      if (response.status === 200) {
+        // Store token in local storage
+        localStorage.setItem('auth_token', response.data.token);
+      }
+      return response;
     });
   },
 
