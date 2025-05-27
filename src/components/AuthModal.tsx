@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState } from 'react';
-import { X, Mail, Lock, User } from 'lucide-react';
+import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import userApiService from '../lib/userApiService';
@@ -19,6 +19,8 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,10 +52,10 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
       if (response.status === 200){
         onLogin(response.user);
         toast({
-        title: isLogin ? "Signed in successfully!" : "Account created successfully!",
-        description: `Welcome ${response.user.name}`,
-        variant: "default",
-      });
+          title: isLogin ? "Signed in successfully!" : "Account created successfully!",
+          description: `Welcome back !`,
+          variant: "success",
+        });
       }
     } catch (error: any) {
       console.error('Authentication error:', error);
@@ -64,6 +66,21 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Check if form is valid
+  const isFormValid = () => {
+    if (isLogin) {
+      return email.trim() !== '' && password.trim() !== '';
+    } else {
+      return (
+        email.trim() !== '' && 
+        password.trim() !== '' && 
+        confirmPassword.trim() !== '' && 
+        name.trim() !== '' && 
+        password === confirmPassword
+      );
     }
   };
 
@@ -126,13 +143,20 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pl-10"
+                className="pl-10 pr-10"
                 required
               />
+              <button 
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
           </div>
 
@@ -144,21 +168,31 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <Input
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 pr-10"
                   required={!isLogin}
                 />
+                <button 
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
+              {!isLogin && password !== confirmPassword && confirmPassword.trim() !== '' && (
+                <p className="text-red-500 text-sm mt-1">Passwords don't match</p>
+              )}
             </div>
           )}
 
           <Button
             type="submit"
-            disabled={isLoading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-medium transition-colors"
+            disabled={isLoading || !isFormValid()}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Sign Up')}
           </Button>
