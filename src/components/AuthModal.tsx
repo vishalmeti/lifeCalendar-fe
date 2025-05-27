@@ -1,8 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState } from 'react';
 import { X, Mail, Lock, User } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import userApiService from '../lib/userApiService';
+import { useToast } from '../hooks/use-toast';
 
 interface AuthModalProps {
   onClose: () => void;
@@ -13,24 +16,56 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate authentication
-    setTimeout(() => {
-      const userData = {
-        id: '1',
-        name: name || 'Demo User',
-        email: email || 'user@example.com'
-      };
+    try {
+      // For signup, validate that passwords match
+      if (!isLogin && password !== confirmPassword) {
+        toast({
+          title: "Passwords don't match",
+          description: "Please make sure your passwords match.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      let response;
       
-      onLogin(userData);
+      if (isLogin) {
+        response = await userApiService.login(email, password);
+      } else {
+        response = await userApiService.register(name, email, password, confirmPassword);
+      }
+      
+      // Store the auth token
+      localStorage.setItem('auth_token', response.token);
+      
+      // Pass the user data to the parent component
+      onLogin(response.user);
+      
+      toast({
+        title: isLogin ? "Signed in successfully!" : "Account created successfully!",
+        description: `Welcome ${response.user.name}`,
+        variant: "default",
+      });
+    } catch (error: any) {
+      console.error('Authentication error:', error);
+      toast({
+        title: "Authentication failed",
+        description: error.response?.data?.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -102,6 +137,25 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
             </div>
           </div>
 
+          {!isLogin && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  type="password"
+                  placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="pl-10"
+                  required={!isLogin}
+                />
+              </div>
+            </div>
+          )}
+
           <Button
             type="submit"
             disabled={isLoading}
@@ -113,7 +167,10 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
           <div className="text-center">
             <button
               type="button"
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setConfirmPassword(''); // Clear confirm password when toggling
+              }}
               className="text-indigo-600 hover:text-indigo-700 text-sm"
             >
               {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
