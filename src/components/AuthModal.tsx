@@ -7,9 +7,16 @@ import { Input } from './ui/input';
 import userApiService from '../lib/userApiService';
 import { useToast } from '../hooks/use-toast';
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  // Add other user properties as needed
+}
+
 interface AuthModalProps {
   onClose: () => void;
-  onLogin: (userData: any) => void;
+  onLogin: (userData: User) => void; // Use the User type
 }
 
 const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
@@ -104,7 +111,7 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {!isLogin && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2 text-left">
                 Full Name
               </label>
               <div className="relative">
@@ -122,7 +129,7 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2 text-left">
               Email Address
             </label>
             <div className="relative">
@@ -139,7 +146,7 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2 text-left">
               Password
             </label>
             <div className="relative">
@@ -164,7 +171,7 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
 
           {!isLogin && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2 text-left">
                 Confirm Password
               </label>
               <div className="relative">

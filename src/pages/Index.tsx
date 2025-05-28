@@ -1,22 +1,20 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { useState, useEffect } from 'react';
-import Sidebar from '../components/Sidebar'; // This will now correctly point to ../components/Sidebar/index.tsx
+import Sidebar from '../components/Sidebar';
 import Dashboard from '../components/Dashboard';
 import Storybook from '../components/Storybook';
 import AIChat from '../components/AIChat';
-import AuthModal from '../components/AuthModal';
 import { Button } from '../components/ui/button';
-import { User, LogOut, Menu } from 'lucide-react'; // Import Menu icon
-import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
+import { User, LogOut, Menu } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [user, setUser] = useState(null);
-  const isMobile = useIsMobile(); // Use the hook
-  const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile); // Sidebar open by default on desktop, closed on mobile
+  const isMobile = useIsMobile();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
+  const navigate = useNavigate(); // Initialize useNavigate
 
   // Update sidebar state when isMobile changes
   useEffect(() => {
@@ -40,19 +38,10 @@ const Index = () => {
           console.error('Error parsing user data from localStorage:', error);
         }
       }
+    } else {
+      navigate('/login'); // Redirect to /login if not authenticated
     }
-  }, []);
-
-  const handleLogin = (userData: any) => {
-    // Save auth token and user data to localStorage
-    if (userData) {
-      localStorage.setItem('user_data', JSON.stringify(userData));
-    }
-    
-    setUser(userData);
-    setIsAuthenticated(true);
-    setShowAuthModal(false);
-  };
+  }, [navigate]); // Add navigate to dependency array
 
   const handleLogout = () => {
     // Clear authentication data from localStorage
@@ -62,40 +51,14 @@ const Index = () => {
     setUser(null);
     setIsAuthenticated(false);
     setActiveSection('dashboard');
+    navigate('/login'); // Redirect to /login on logout
   };
 
   if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Life Calendar</h1>
-            <p className="text-lg text-gray-600">AI-Powered Personal Reflection</p>
-          </div>
-          
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4 text-center">Welcome Back</h2>
-            <p className="text-gray-600 mb-6 text-center">
-              Track your daily moments, reflect on your journey, and discover insights with AI
-            </p>
-            
-            <Button 
-              onClick={() => setShowAuthModal(true)}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-medium transition-colors"
-            >
-              Sign In / Sign Up
-            </Button>
-          </div>
-        </div>
-
-        {showAuthModal && (
-          <AuthModal 
-            onClose={() => setShowAuthModal(false)}
-            onLogin={handleLogin}
-          />
-        )}
-      </div>
-    );
+    // This part will likely not be reached due to the redirect,
+    // but it's good practice to have a fallback or loading state.
+    // Alternatively, you can return null or a loading spinner.
+    return null; // Or a loading indicator
   }
 
   const renderContent = () => {
