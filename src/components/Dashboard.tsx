@@ -1,9 +1,13 @@
-import { useState } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect } from 'react'; // Import useEffect
 import { Plus } from 'lucide-react';
 import EntryModal from './EntryModal';
 import DashboardHeader from './dashboard/DashboardHeader';
 import EntryCard, { type Entry as EntryType } from './dashboard/EntryCard'; // Import Entry type
 import NoEntries from './dashboard/NoEntries'; // Import NoEntries
+import { dailyTaskService } from '@/lib/dailyTaskService'; // Import dailyTaskService
+import { useToast } from '../hooks/use-toast';
+import Loader from './ui/loader'; // Import Loader component
 
 // Define the new Entry structure based on the schema
 interface Meeting {
@@ -46,25 +50,61 @@ interface MoodColors {
 }
 
 const Dashboard = () => {
-  const [entries, setEntries] = useState<Entry[]>([
-    {
-      id: '1',
-      date: '2024-05-25',
-      meetings: [
-        { title: 'Client Presentation', time: '10:00 AM', notes: 'Discuss Q3 roadmap' },
-        { title: 'Team Sync', time: '2:00 PM' }
-      ],
-      tasks: [
-        { caption: 'Complete project proposal', url: 'https://docs.google.com/document/d/...' },
-        { caption: 'Review code changes' }
-      ],
-      mood: 'productive',
-      journalNotes: 'Great progress today. Feeling motivated about the upcoming project launch.',
-      summary: 'A highly productive day focused on project advancement. You had two important meetings including a client presentation, completed key tasks, and maintained a positive outlook. Your notes indicate strong motivation for upcoming initiatives.'
-    }
-  ]);
+  const { toast } = useToast();
+
+  const [entries, setEntries] = useState<Entry[]>([]);
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
+  const [isLoading, setIsLoading] = useState(true); // Add isLoading state
+
+  useEffect(() => {
+    const fetchYesterdayTask = async () => {
+      setIsLoading(true); // Set isLoading to true before fetching
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const year = yesterday.getFullYear();
+      const month = (yesterday.getMonth() + 1).toString().padStart(2, '0');
+      const day = yesterday.getDate().toString().padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
+
+      try {
+        const response = await dailyTaskService.getTaskOfTheDay(formattedDate);
+        console.log('Task of the day response:', response.data);
+        
+        if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+          // Map API response to Entry type if necessary
+          const fetchedEntries = response.data.map((item: any) => ({
+            id: item._id || item.id, // Use _id from backend, fallback to id
+            date: item.date ? new Date(item.date).toISOString().split('T')[0] : formattedDate,
+            meetings: item.meetings?.map((m: any) => ({ title: m.title, time: m.time, notes: m.notes })) || [],
+            tasks: item.tasks?.map((t: any) => ({ caption: t.caption, url: t.url })) || [],
+            mood: item.mood || 'neutral',
+            journalNotes: item.journalNotes || '',
+            summary: item.summary?.text || '', // Assuming summary is an object with a text field
+          }));
+          setEntries(fetchedEntries); 
+          
+          console.log('Fetched entries for yesterday:', fetchedEntries);
+        }
+        else {
+          setEntries([]); // Set to empty if no entries found
+        }
+      } catch (error) {
+        console.error('Failed to fetch task of the day:', error);
+        // Optionally, set entries to an empty array or show an error message
+        setEntries([]); 
+        toast({
+          title: "Failed to fetch task",
+          description: (error as Error).message, // Display error message
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false); // Set isLoading to false after fetching
+      }
+    };
+
+    fetchYesterdayTask();
+  }, [toast]); // Empty dependency array ensures this runs only once on mount
 
   const moodColors: MoodColors = { // Ensure this object implements MoodColors
     happy: 'bg-yellow-100 text-yellow-800',
@@ -120,24 +160,32 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 md:p-6 lg:max-w-4xl">
+    <div className="container mx-auto px-4 py-4 sm:p-4 md:p-6 lg:max-w-4xl">
       <DashboardHeader onNewEntryClick={openNewEntryModal} />
 
-      <div className="space-y-4 md:space-y-6">
-        {entries.map((entry) => (
-          <EntryCard
-            key={entry.id}
-            entry={entry}
-            moodColors={moodColors}
-            onEdit={handleEditEntry}
-            onDelete={handleDeleteEntry}
-          />
-        ))}
+      {isLoading ? (
+        <div className="flex justify-center items-center h-48 sm:h-64">
+          <Loader variant="dots" size="xl" text="Loading Todays Data" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-2">
+          {entries.map((entry) => (
+            <EntryCard
+              key={entry.id}
+              entry={entry}
+              moodColors={moodColors}
+              onEdit={handleEditEntry}
+              onDelete={handleDeleteEntry}
+            />
+          ))}
 
-        {entries.length === 0 && (
-          <NoEntries onNewEntryClick={openNewEntryModal} />
-        )}
-      </div>
+          {entries.length === 0 && !isLoading && (
+            <div className="col-span-1 sm:col-span-2 lg:col-span-2">
+              <NoEntries onNewEntryClick={openNewEntryModal} />
+            </div>
+          )}
+        </div>
+      )}
 
       {showEntryModal && (
         <EntryModal

@@ -78,12 +78,14 @@ The story would weave together themes from your daily entries, identify patterns
   const getDateRangeLabel = (period: string) => {
     const now = new Date();
     switch (period) {
-      case 'last-week':
+      case 'last-week': {
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         return `${weekAgo.toLocaleDateString()} - ${now.toLocaleDateString()}`;
-      case 'last-month':
+      }
+      case 'last-month': {
         const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
         return `${monthAgo.toLocaleDateString()} - ${now.toLocaleDateString()}`;
+      }
       default:
         return 'Custom Range';
     }
