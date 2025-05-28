@@ -4,7 +4,7 @@ import AISummary from './AISummary';
 import MeetingsSection from './MeetingsSection';
 import TasksSection from './TasksSection';
 import NotesSection from './NotesSection';
-import EntryCardHeader from './EntryCardHeader'; // Import the new EntryCardHeader component
+import EntryCardHeader from './EntryCardHeader';
 
 // Define the new Entry structure based on the schema
 interface Meeting {
@@ -43,30 +43,49 @@ interface EntryCardProps {
   moodColors: MoodColors;
   onEdit: (entry: Entry) => void;
   onDelete: (entryId: string) => void;
+  onCardClick: (entry: Entry) => void; // Add new prop for card click
 }
 
-const EntryCard = ({ entry, moodColors, onEdit, onDelete }: EntryCardProps) => {
+const EntryCard = ({ entry, moodColors, onEdit, onDelete, onCardClick }: EntryCardProps) => {
   return (
-    <Card key={entry.id} className="border-l-4 border-l-indigo-500 hover:shadow-lg transition-shadow">
+    <Card 
+      key={entry.id} 
+      className="border-l-4 border-l-indigo-500 hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={() => onCardClick(entry)}
+    >
       <CardHeader className="p-4 md:p-6"> {/* Adjusted padding */}
         <EntryCardHeader
           date={entry.date}
           mood={entry.mood}
           moodBadgeClassName={moodColors[entry.mood] || 'bg-gray-100 text-gray-800'}
-          onEditClick={() => onEdit(entry)}
-          onDeleteClick={() => onDelete(entry.id)}
+          onEditClick={(e) => {
+            e.stopPropagation(); // Prevent card click event
+            onEdit(entry);
+          }}
+          onDeleteClick={(e) => {
+            e.stopPropagation(); // Prevent card click event
+            onDelete(entry.id);
+          }}
         />
       </CardHeader>
 
       <CardContent className="p-4 md:p-6 space-y-4 md:space-y-6"> {/* Adjusted padding and spacing */}
-        <AISummary summary={entry.summary || ''} />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6"> {/* Adjusted gap and ensure single column on mobile */}
-          <MeetingsSection meetings={entry.meetings} />
-          <TasksSection tasks={entry.tasks} />
+        <div className="overflow-hidden">
+          <AISummary summary={entry.summary || ''} />
         </div>
 
-        <NotesSection notes={entry.journalNotes} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6"> {/* Adjusted gap and ensure single column on mobile */}
+          <div className="overflow-hidden">
+            <MeetingsSection meetings={entry.meetings} />
+          </div>
+          <div className="overflow-hidden">
+            <TasksSection tasks={entry.tasks} />
+          </div>
+        </div>
+
+        <div className="overflow-hidden">
+          <NotesSection notes={entry.journalNotes} />
+        </div>
       </CardContent>
     </Card>
   );

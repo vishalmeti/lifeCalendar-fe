@@ -6,11 +6,19 @@ interface EntryCardHeaderProps {
   date: string;
   mood: string;
   moodBadgeClassName: string;
-  onEditClick: () => void;
-  onDeleteClick: () => void;
+  onEditClick?: (e?: React.MouseEvent) => void;
+  onDeleteClick?: (e?: React.MouseEvent) => void;
+  hideButtons?: boolean;
 }
 
-const EntryCardHeader = ({ date, mood, moodBadgeClassName, onEditClick, onDeleteClick }: EntryCardHeaderProps) => {
+const EntryCardHeader = ({ 
+  date, 
+  mood, 
+  moodBadgeClassName, 
+  onEditClick, 
+  onDeleteClick,
+  hideButtons = false
+}: EntryCardHeaderProps) => {
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
       <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
@@ -28,24 +36,26 @@ const EntryCardHeader = ({ date, mood, moodBadgeClassName, onEditClick, onDelete
           {mood}
         </Badge>
       </div>
-      <div className="flex space-x-2 self-end sm:self-center">
-        <Button
-          variant="outline"
-          size="sm" // Changed to sm, was xs
-          onClick={onEditClick}
-          className="text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-1.5" // Adjusted padding for smaller look
-        >
-          Edit
-        </Button>
-        <Button
-          variant="outline"
-          size="sm" // Changed to sm, was xs
-          onClick={onDeleteClick}
-          className="text-red-600 hover:text-red-700 text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-1.5" // Adjusted padding
-        >
-          Delete
-        </Button>
-      </div>
+      {!hideButtons && onEditClick && onDeleteClick && (
+        <div className="flex space-x-2 self-end sm:self-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onEditClick}
+            className="text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-1.5"
+          >
+            Edit
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onDeleteClick}
+            className="text-red-600 hover:text-red-700 text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-1.5"
+          >
+            Delete
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

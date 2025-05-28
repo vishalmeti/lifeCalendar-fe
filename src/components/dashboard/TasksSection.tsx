@@ -7,9 +7,10 @@ interface Task {
 
 interface TasksSectionProps {
   tasks: Task[];
+  truncate?: boolean; // Add prop to control truncation
 }
 
-const TasksSection = ({ tasks }: TasksSectionProps) => {
+const TasksSection = ({ tasks, truncate = true }: TasksSectionProps) => {
   if (!tasks || tasks.length === 0) return null;
 
   return (
@@ -22,13 +23,14 @@ const TasksSection = ({ tasks }: TasksSectionProps) => {
         {tasks.map((task, index) => (
           <li key={index} className="bg-gray-50 p-3 rounded-lg">
             <div className="flex items-center justify-between">
-              <span>{task.caption}</span>
+              <span className={truncate ? 'truncate max-w-[85%]' : ''}>{task.caption}</span>
               {task.url && (
                 <a
                   href={task.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-indigo-600 hover:text-indigo-700"
+                  className="text-indigo-600 hover:text-indigo-700 ml-2 flex-shrink-0"
+                  onClick={(e) => e.stopPropagation()} // Prevent card click event when clicking link
                 >
                   <LinkIcon className="w-4 h-4" />
                 </a>

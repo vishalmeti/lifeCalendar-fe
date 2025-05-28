@@ -2,9 +2,10 @@ import { FileText } from 'lucide-react';
 
 interface AISummaryProps {
   summary: string;
+  truncate?: boolean; // Add prop to control truncation
 }
 
-const AISummary = ({ summary }: AISummaryProps) => {
+const AISummary = ({ summary, truncate = true }: AISummaryProps) => {
   if (!summary) return null;
 
   return (
@@ -13,7 +14,9 @@ const AISummary = ({ summary }: AISummaryProps) => {
         <FileText className="w-4 h-4 mr-2" />
         AI Summary
       </h3>
-      <p className="text-indigo-800 leading-relaxed">{summary}</p>
+      <p className={`text-indigo-800 leading-relaxed ${truncate ? 'line-clamp-2' : ''}`}>
+        {summary}
+      </p>
     </div>
   );
 };

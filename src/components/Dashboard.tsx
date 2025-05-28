@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'; // Import useEffect
 import { Plus } from 'lucide-react';
 import EntryModal from './EntryModal';
+import EntryDetailModal from './dashboard/EntryDetailModal'; // Import the new EntryDetailModal component
 import DashboardHeader from './dashboard/DashboardHeader';
 import EntryCard, { type Entry as EntryType } from './dashboard/EntryCard'; // Import Entry type
 import NoEntries from './dashboard/NoEntries'; // Import NoEntries
@@ -56,6 +57,10 @@ const Dashboard = () => {
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Add isLoading state
+  
+  // New state for detail modal
+  const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   useEffect(() => {
     const fetchYesterdayTask = async () => {
@@ -148,6 +153,8 @@ const Dashboard = () => {
   const handleEditEntry = (entry: Entry) => {
     setEditingEntry(entry);
     setShowEntryModal(true);
+    // Close detail modal if it was open
+    setShowDetailModal(false);
   };
 
   const handleDeleteEntry = (entryId: string) => {
@@ -159,16 +166,25 @@ const Dashboard = () => {
     setShowEntryModal(true);
   };
 
+  // New handler for card click
+  const handleCardClick = (entry: Entry) => {
+    setSelectedEntry(entry);
+    setShowDetailModal(true);
+  };
+
   return (
     <div className="container mx-auto px-4 py-4 sm:p-4 md:p-6 lg:max-w-4xl">
-      <DashboardHeader onNewEntryClick={openNewEntryModal} />
+      <DashboardHeader 
+        onNewEntryClick={openNewEntryModal} 
+        hasEntries={entries.length > 0} 
+      />
 
       {isLoading ? (
         <div className="flex justify-center items-center h-48 sm:h-64">
           <Loader variant="dots" size="xl" text="Loading Todays Data" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:gap-6">
           {entries.map((entry) => (
             <EntryCard
               key={entry.id}
@@ -176,11 +192,12 @@ const Dashboard = () => {
               moodColors={moodColors}
               onEdit={handleEditEntry}
               onDelete={handleDeleteEntry}
+              onCardClick={handleCardClick} // Add the onCardClick handler
             />
           ))}
 
           {entries.length === 0 && !isLoading && (
-            <div className="col-span-1 sm:col-span-2 lg:col-span-2">
+            <div className="col-span-1">
               <NoEntries onNewEntryClick={openNewEntryModal} />
             </div>
           )}
@@ -195,6 +212,17 @@ const Dashboard = () => {
             setShowEntryModal(false);
             setEditingEntry(null);
           }}
+        />
+      )}
+
+      {/* Add the EntryDetailModal */}
+      {selectedEntry && showDetailModal && (
+        <EntryDetailModal
+          entry={selectedEntry}
+          moodColors={moodColors}
+          open={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          onEdit={handleEditEntry}
         />
       )}
     </div>

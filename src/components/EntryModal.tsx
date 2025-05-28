@@ -191,10 +191,12 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
               {tasks.map((task, index) => (
                 <div key={index} className="space-y-2 p-3 border border-gray-200 rounded-lg">
                   <div className="flex items-center space-x-2">
-                    <Input
+                    <Textarea
                       placeholder="Task description"
                       value={task.caption}
                       onChange={(e) => updateTask(index, 'caption', e.target.value)}
+                      rows={8}
+                      required
                     />
                     {tasks.length > 1 && (
                       <Button
