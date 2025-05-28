@@ -1,5 +1,5 @@
 interface NotesSectionProps {
-  notes: string;
+  notes: string; // This will now receive journalNotes
 }
 
 const NotesSection = ({ notes }: NotesSectionProps) => {
@@ -8,8 +8,8 @@ const NotesSection = ({ notes }: NotesSectionProps) => {
   return (
     <div>
       <h3 className="font-semibold text-gray-900 mb-3">Journal Notes</h3>
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <p className="text-gray-700 leading-relaxed">{notes}</p>
+      <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
+        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{notes}</p>
       </div>
     </div>
   );

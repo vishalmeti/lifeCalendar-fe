@@ -1,10 +1,15 @@
-
 import { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+
+interface Meeting {
+  title: string;
+  time?: string;
+  notes?: string;
+}
 
 interface Task {
   caption: string;
@@ -14,49 +19,59 @@ interface Task {
 interface Entry {
   id: string;
   date: string;
-  meetings: string[];
+  meetings: Meeting[];
   tasks: Task[];
-  mood: string;
-  notes: string;
-  aiSummary: string;
+  mood: string; // Keep as string for Select component, validation happens on save
+  journalNotes: string; // Renamed from notes
+  summary?: string; // Renamed from aiSummary
 }
 
 interface EntryModalProps {
   entry?: Entry | null;
-  onSave: (entry: Omit<Entry, 'id' | 'aiSummary'>) => void;
+  onSave: (entry: Omit<Entry, 'id' | 'summary'>) => void;
   onClose: () => void;
 }
 
 const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [meetings, setMeetings] = useState<string[]>(['']);
+  const [meetings, setMeetings] = useState<Meeting[]>([{ title: '', time: '', notes: '' }]);
   const [tasks, setTasks] = useState<Task[]>([{ caption: '', url: '' }]);
   const [mood, setMood] = useState('');
-  const [notes, setNotes] = useState('');
+  const [journalNotes, setJournalNotes] = useState(''); // Renamed from notes
 
-  const moods = ['happy', 'productive', 'stressed', 'calm', 'excited', 'tired'];
+  const moods = [
+    'happy', 'sad', 'neutral', 'excited', 'motivated', 'stressed', 'calm', 'fun',
+    'anxious', 'grateful', 'productive', 'tired', 'other'
+  ];
 
   useEffect(() => {
     if (entry) {
       setDate(entry.date);
-      setMeetings(entry.meetings.length > 0 ? entry.meetings : ['']);
+      setMeetings(entry.meetings.length > 0 ? entry.meetings : [{ title: '', time: '', notes: '' }]);
       setTasks(entry.tasks.length > 0 ? entry.tasks : [{ caption: '', url: '' }]);
       setMood(entry.mood);
-      setNotes(entry.notes);
+      setJournalNotes(entry.journalNotes); // Renamed from entry.notes
+    } else {
+      // Reset to default for new entry
+      setDate(new Date().toISOString().split('T')[0]);
+      setMeetings([{ title: '', time: '', notes: '' }]);
+      setTasks([{ caption: '', url: '' }]);
+      setMood('');
+      setJournalNotes('');
     }
   }, [entry]);
 
   const addMeeting = () => {
-    setMeetings([...meetings, '']);
+    setMeetings([...meetings, { title: '', time: '', notes: '' }]);
   };
 
   const removeMeeting = (index: number) => {
     setMeetings(meetings.filter((_, i) => i !== index));
   };
 
-  const updateMeeting = (index: number, value: string) => {
+  const updateMeeting = (index: number, field: keyof Meeting, value: string) => {
     const updated = [...meetings];
-    updated[index] = value;
+    updated[index] = { ...updated[index], [field]: value };
     setMeetings(updated);
   };
 
@@ -76,16 +91,16 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const validMeetings = meetings.filter(m => m.trim() !== '');
+
+    const validMeetings = meetings.filter(m => m.title.trim() !== '');
     const validTasks = tasks.filter(t => t.caption.trim() !== '');
-    
+
     onSave({
       date,
       meetings: validMeetings,
       tasks: validTasks,
       mood,
-      notes
+      journalNotes // Renamed from notes
     });
   };
 
@@ -122,28 +137,42 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
               <label className="block text-sm font-medium text-gray-700">Meetings</label>
               <Button type="button" onClick={addMeeting} size="sm" variant="outline">
                 <Plus className="w-4 h-4 mr-1" />
-                Add
+                Add Meeting
               </Button>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {meetings.map((meeting, index) => (
-                <div key={index} className="flex items-center space-x-2">
+                <div key={index} className="space-y-2 p-3 border border-gray-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      placeholder="Meeting title"
+                      value={meeting.title}
+                      onChange={(e) => updateMeeting(index, 'title', e.target.value)}
+                      required // Title is required if a meeting is added
+                    />
+                    {meetings.length > 1 && (
+                      <Button
+                        type="button"
+                        onClick={() => removeMeeting(index)}
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
                   <Input
-                    placeholder="Meeting title"
-                    value={meeting}
-                    onChange={(e) => updateMeeting(index, e.target.value)}
+                    placeholder="Time (e.g., 10:00 AM)"
+                    value={meeting.time || ''}
+                    onChange={(e) => updateMeeting(index, 'time', e.target.value)}
                   />
-                  {meetings.length > 1 && (
-                    <Button
-                      type="button"
-                      onClick={() => removeMeeting(index)}
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
+                  <Textarea
+                    placeholder="Notes (optional)"
+                    value={meeting.notes || ''}
+                    onChange={(e) => updateMeeting(index, 'notes', e.target.value)}
+                    rows={2}
+                  />
                 </div>
               ))}
             </div>
@@ -193,7 +222,7 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
           {/* Mood */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Mood</label>
-            <Select value={mood} onValueChange={setMood} required>
+            <Select value={mood} onValueChange={setMood} required> {/* `required` might need adjustment based on schema if mood is optional */}
               <SelectTrigger>
                 <SelectValue placeholder="Select your mood" />
               </SelectTrigger>
@@ -207,13 +236,13 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
             </Select>
           </div>
 
-          {/* Notes */}
+          {/* Journal Notes */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Journal Notes</label>
             <Textarea
               placeholder="Write your thoughts, reflections, or anything noteworthy about your day..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              value={journalNotes} // Renamed from notes
+              onChange={(e) => setJournalNotes(e.target.value)} // Renamed from setNotes
               rows={4}
             />
           </div>
