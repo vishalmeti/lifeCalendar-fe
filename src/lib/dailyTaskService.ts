@@ -5,8 +5,20 @@ interface DailyTaskResponse {
   date: Date;
   meetings: Meeting[];
   tasks: Task[];
-  mood?: 'happy' | 'sad' | 'neutral' | 'excited' | 'motivated' | 'stressed' | 'calm' |
-         'anxious' | 'grateful' | 'productive' | 'tired' | 'other' | 'fun';
+  mood?:
+    | "happy"
+    | "sad"
+    | "neutral"
+    | "excited"
+    | "motivated"
+    | "stressed"
+    | "calm"
+    | "anxious"
+    | "grateful"
+    | "productive"
+    | "tired"
+    | "other"
+    | "fun";
   journalNotes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -41,39 +53,40 @@ interface Summary {
   __v: number;
 }
 
-import apiService from './axiosService';
-
-
+import apiService from "./axiosService";
 
 export const dailyTaskService = {
   // Fetch daily tasks for a specific date
   getDailyTasks: (date: string) => {
     return apiService.get<DailyTaskResponse[]>(`/entries`);
-  }
-  ,
+  },
+
+  getMonthlyTasks: (startDate: string, endDate: string) => {
+    return apiService.get<DailyTaskResponse[]>(`/entries?startDate=${startDate}&endDate=${endDate}`);
+  },
   // Create a new daily task entry
-  createDailyTask: (taskData: Omit<DailyTaskResponse, '_id' | 'createdAt' | 'updatedAt' | '__v'>) => {
-    return apiService.post<DailyTaskResponse>('/entries', taskData);
-  }
-  ,
+  createDailyTask: (
+    taskData: Omit<DailyTaskResponse, "_id" | "createdAt" | "updatedAt" | "__v">
+  ) => {
+    return apiService.post<DailyTaskResponse>("/entries", taskData);
+  },
   // Update an existing daily task entry
-  updateDailyTask: (id: string, taskData: Omit<DailyTaskResponse, '_id' | 'createdAt' | 'updatedAt' | '__v'>) => {
+  updateDailyTask: (
+    id: string,
+    taskData: Omit<DailyTaskResponse, "_id" | "createdAt" | "updatedAt" | "__v">
+  ) => {
     return apiService.put<DailyTaskResponse>(`/entries/${id}`, taskData);
-  }
-  ,
+  },
   // Delete a daily task entry
   deleteDailyTask: (id: string) => {
     return apiService.delete(`/entries/${id}`);
-  }
-  ,
+  },
   // Get a specific daily task entry by ID
   getDailyTaskById: (id: string) => {
     return apiService.get<DailyTaskResponse>(`/entries/${id}`);
-  }
-  ,
+  },
   // Get task of the day
   getTaskOfTheDay: (date: string) => {
     return apiService.get<DailyTaskResponse>(`/entries?startDate=${date}`);
-  }
-  ,
-}
+  },
+};

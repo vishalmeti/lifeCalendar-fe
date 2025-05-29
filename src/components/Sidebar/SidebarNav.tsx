@@ -1,5 +1,5 @@
 // filepath: /Users/vishalmeti/Projects/LifeCalendar/lifeCalendar-fe/src/components/SidebarNav.tsx
-import { Calendar, BookOpen, MessageCircle, LucideIcon } from 'lucide-react';
+import { Calendar, BookOpen, MessageCircle, CalendarDays, LucideIcon } from 'lucide-react';
 
 interface NavItem {
   id: string;
@@ -14,6 +14,7 @@ interface SidebarNavProps {
 
 const navItems: NavItem[] = [
   { id: 'dashboard', label: 'Daily Entries', icon: Calendar },
+  { id: 'calendar', label: 'Calendar', icon: CalendarDays },
   { id: 'storybook', label: 'Storybook', icon: BookOpen },
   { id: 'chat', label: 'AI Assistant', icon: MessageCircle },
 ];

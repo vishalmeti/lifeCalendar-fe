@@ -3,6 +3,7 @@ import Sidebar from '../components/Sidebar';
 import Dashboard from '../components/Dashboard';
 import Storybook from '../components/Storybook';
 import AIChat from '../components/AIChat';
+import Calendar from '../components/Calendar';
 import { Button } from '../components/ui/button';
 import { User, LogOut, Menu } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -65,6 +66,8 @@ const Index = () => {
     switch (activeSection) {
       case 'dashboard':
         return <Dashboard />;
+      case 'calendar':
+        return <Calendar />;
       case 'storybook':
         return <Storybook />;
       case 'chat':
