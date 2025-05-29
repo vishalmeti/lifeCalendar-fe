@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import EntryModal from "./EntryModal";
+import Loader from "@/components/ui/loader";
 import { dailyTaskService } from "@/lib/dailyTaskService";
 import { useToast } from "../hooks/use-toast";
 
@@ -40,6 +41,7 @@ const Calendar = () => {
   const [entries, setEntries] = useState<Record<string, CalendarEntry>>({});
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const today = new Date();
@@ -48,6 +50,7 @@ const Calendar = () => {
   // Mock data - replace with actual API calls
   useEffect(() => {
     const fetchMonthData = async (date: Date) => {
+      setIsLoading(true);
       try {
         const year = date.getFullYear();
         const month = (date.getMonth() + 1).toString().padStart(2, "0");
@@ -104,6 +107,8 @@ const Calendar = () => {
           description: (error as Error).message,
           variant: "destructive",
         });
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -286,6 +291,7 @@ const Calendar = () => {
                 size="sm"
                 onClick={handlePrevMonth}
                 className="h-8 w-8 p-0"
+                disabled={isLoading}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -297,52 +303,64 @@ const Calendar = () => {
                 size="sm"
                 onClick={handleNextMonth}
                 className="h-8 w-8 p-0"
+                disabled={isLoading}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
-          {/* Legend */}
-          <div className="flex flex-wrap gap-4 mt-4 p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-200 border border-blue-300 rounded"></div>
-              <span className="text-sm text-gray-600">Today</span>
+          {!isLoading && (
+            <div className="flex flex-wrap gap-4 mt-4 p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-blue-200 border border-blue-300 rounded"></div>
+                <span className="text-sm text-gray-600">Today</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-200 border border-green-300 rounded"></div>
+                <span className="text-sm text-gray-600">Has Entry</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-red-200 border border-red-300 rounded"></div>
+                <span className="text-sm text-gray-600">No Entry</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-gray-200 border border-gray-300 rounded"></div>
+                <span className="text-sm text-gray-600">Future (Disabled)</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-200 border border-green-300 rounded"></div>
-              <span className="text-sm text-gray-600">Has Entry</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-red-200 border border-red-300 rounded"></div>
-              <span className="text-sm text-gray-600">No Entry</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-gray-200 border border-gray-300 rounded"></div>
-              <span className="text-sm text-gray-600">Future (Disabled)</span>
-            </div>
-          </div>
+          )}
         </CardHeader>
 
         <CardContent className="h-[calc(100%-140px)]">
-          <div className="h-full flex flex-col">
-            {/* Day headers */}
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {dayNames.map((day) => (
-                <div
-                  key={day}
-                  className="h-8 flex items-center justify-center text-sm font-medium text-gray-500 bg-gray-50 rounded"
-                >
-                  {day}
-                </div>
-              ))}
+          {isLoading ? (
+            <div className="h-full flex items-center justify-center">
+              <Loader 
+                size="lg" 
+                text="Loading calendar..." 
+                variant="spinner" 
+              />
             </div>
+          ) : (
+            <div className="h-full flex flex-col">
+              {/* Day headers */}
+              <div className="grid grid-cols-7 gap-1 mb-2">
+                {dayNames.map((day) => (
+                  <div
+                    key={day}
+                    className="h-8 flex items-center justify-center text-sm font-medium text-gray-500 bg-gray-50 rounded"
+                  >
+                    {day}
+                  </div>
+                ))}
+              </div>
 
-            {/* Calendar grid */}
-            <div className="grid grid-cols-7 gap-1 flex-1">
-              {renderCalendarDays()}
+              {/* Calendar grid */}
+              <div className="grid grid-cols-7 gap-1 flex-1">
+                {renderCalendarDays()}
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
