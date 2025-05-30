@@ -3,6 +3,7 @@ import { Clock } from 'lucide-react';
 interface Meeting {
   title: string;
   time?: string;
+  amPm?: 'AM' | 'PM';
   notes?: string;
 }
 
@@ -27,7 +28,9 @@ const MeetingsSection = ({ meetings, truncate = true }: MeetingsSectionProps) =>
               {meeting.title}
             </div>
             {meeting.time && (
-              <div className="text-xs text-gray-500 mt-1">{meeting.time}</div>
+              <div className="text-xs text-gray-500 mt-1">
+                {meeting.time} {meeting.amPm}
+              </div>
             )}
             {meeting.notes && (
               <p className={`text-sm text-gray-600 mt-2 ${truncate ? 'line-clamp-2' : 'whitespace-pre-wrap'}`}>

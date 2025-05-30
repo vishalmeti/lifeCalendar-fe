@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 
 interface Meeting {
   title: string;
-  time?: string;
+  time: string; // No longer optional
+  amPm?: 'AM' | 'PM';
   notes?: string;
 }
 
@@ -34,7 +35,7 @@ interface EntryModalProps {
 
 const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [meetings, setMeetings] = useState<Meeting[]>([{ title: '', time: '', notes: '' }]);
+  const [meetings, setMeetings] = useState<Meeting[]>([{ title: '', time: '', amPm: 'AM', notes: '' }]);
   const [tasks, setTasks] = useState<Task[]>([{ caption: '', url: '' }]);
   const [mood, setMood] = useState('');
   const [journalNotes, setJournalNotes] = useState(''); // Renamed from notes
@@ -47,14 +48,16 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
   useEffect(() => {
     if (entry) {
       setDate(entry.date);
-      setMeetings(entry.meetings.length > 0 ? entry.meetings : [{ title: '', time: '', notes: '' }]);
+      setMeetings(entry.meetings.length > 0 ? 
+        entry.meetings.map(m => ({ ...m, amPm: m.amPm || 'AM' })) : 
+        [{ title: '', time: '', amPm: 'AM', notes: '' }]);
       setTasks(entry.tasks.length > 0 ? entry.tasks : [{ caption: '', url: '' }]);
       setMood(entry.mood);
       setJournalNotes(entry.journalNotes); // Renamed from entry.notes
     } else {
       // Reset to default for new entry
       setDate(new Date().toISOString().split('T')[0]);
-      setMeetings([{ title: '', time: '', notes: '' }]);
+      setMeetings([{ title: '', time: '', amPm: 'AM', notes: '' }]);
       setTasks([{ caption: '', url: '' }]);
       setMood('');
       setJournalNotes('');
@@ -62,14 +65,14 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
   }, [entry]);
 
   const addMeeting = () => {
-    setMeetings([...meetings, { title: '', time: '', notes: '' }]);
+    setMeetings([...meetings, { title: '', time: '', amPm: 'AM', notes: '' }]);
   };
 
   const removeMeeting = (index: number) => {
     setMeetings(meetings.filter((_, i) => i !== index));
   };
 
-  const updateMeeting = (index: number, field: keyof Meeting, value: string) => {
+  const updateMeeting = (index: number, field: keyof Meeting, value: string | 'AM' | 'PM') => {
     const updated = [...meetings];
     updated[index] = { ...updated[index], [field]: value };
     setMeetings(updated);
@@ -92,7 +95,13 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const validMeetings = meetings.filter(m => m.title.trim() !== '');
+    // Validate required fields
+    if (!mood) {
+      alert("Please select a mood");
+      return;
+    }
+
+    const validMeetings = meetings.filter(m => m.title.trim() !== '' && m.time.trim() !== '');
     const validTasks = tasks.filter(t => t.caption.trim() !== '');
 
     onSave({
@@ -100,9 +109,12 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
       meetings: validMeetings,
       tasks: validTasks,
       mood,
-      journalNotes // Renamed from notes
+      journalNotes
     });
   };
+
+  // Helper function to render required field indicator
+  const requiredStar = () => <span className="text-red-500 ml-1">*</span>;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -122,7 +134,9 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Date{requiredStar()}
+            </label>
             <Input
               type="date"
               value={date}
@@ -134,7 +148,9 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
           {/* Meetings */}
           <div>
             <div className="flex justify-between items-center mb-3">
-              <label className="block text-sm font-medium text-gray-700">Meetings</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Meetings{requiredStar()}
+              </label>
               <Button type="button" onClick={addMeeting} size="sm" variant="outline">
                 <Plus className="w-4 h-4 mr-1" />
                 Add Meeting
@@ -148,7 +164,7 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
                       placeholder="Meeting title"
                       value={meeting.title}
                       onChange={(e) => updateMeeting(index, 'title', e.target.value)}
-                      required // Title is required if a meeting is added
+                      required
                     />
                     {meetings.length > 1 && (
                       <Button
@@ -162,11 +178,30 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
                       </Button>
                     )}
                   </div>
-                  <Input
-                    placeholder="Time (e.g., 10:00 AM)"
-                    value={meeting.time || ''}
-                    onChange={(e) => updateMeeting(index, 'time', e.target.value)}
-                  />
+                  <div className="flex items-center space-x-2">
+                    <div className="flex-grow">
+                      <Input
+                        placeholder="Time (e.g., 10:00)"
+                        value={meeting.time}
+                        onChange={(e) => updateMeeting(index, 'time', e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="w-24">
+                      <Select 
+                        value={meeting.amPm || 'AM'} 
+                        onValueChange={(value) => updateMeeting(index, 'amPm', value as 'AM' | 'PM')}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AM">AM</SelectItem>
+                          <SelectItem value="PM">PM</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   <Textarea
                     placeholder="Notes (optional)"
                     value={meeting.notes || ''}
@@ -181,7 +216,9 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
           {/* Tasks */}
           <div>
             <div className="flex justify-between items-center mb-3">
-              <label className="block text-sm font-medium text-gray-700">Tasks</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Tasks{requiredStar()}
+              </label>
               <Button type="button" onClick={addTask} size="sm" variant="outline">
                 <Plus className="w-4 h-4 mr-1" />
                 Add
@@ -212,7 +249,7 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
                   </div>
                   <Input
                     placeholder="URL (optional)"
-                    value={task.url}
+                    value={task.url || ''}
                     onChange={(e) => updateTask(index, 'url', e.target.value)}
                     type="url"
                   />
@@ -223,9 +260,15 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
 
           {/* Mood */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Mood</label>
-            <Select value={mood} onValueChange={setMood} required> {/* `required` might need adjustment based on schema if mood is optional */}
-              <SelectTrigger>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Mood{requiredStar()}
+            </label>
+            <Select 
+              value={mood} 
+              onValueChange={setMood} 
+              required
+            >
+              <SelectTrigger className={!mood ? "border-red-500" : ""}>
                 <SelectValue placeholder="Select your mood" />
               </SelectTrigger>
               <SelectContent>
@@ -243,8 +286,8 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">Journal Notes</label>
             <Textarea
               placeholder="Write your thoughts, reflections, or anything noteworthy about your day..."
-              value={journalNotes} // Renamed from notes
-              onChange={(e) => setJournalNotes(e.target.value)} // Renamed from setNotes
+              value={journalNotes}
+              onChange={(e) => setJournalNotes(e.target.value)}
               rows={4}
             />
           </div>
