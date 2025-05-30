@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import EntryModal from "./EntryModal";
+import EntryDetailModal from "./dashboard/EntryDetailModal";
 import Loader from "@/components/ui/loader";
 import { dailyTaskService } from "@/lib/dailyTaskService";
 import { useToast } from "../hooks/use-toast";
@@ -21,6 +22,8 @@ const Calendar = () => {
   const [entries, setEntries] = useState<Record<string, CalendarEntry>>({});
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -123,7 +126,16 @@ const Calendar = () => {
     if (isDateInFuture(date)) return;
 
     setSelectedDate(date);
-    setIsModalOpen(true);
+    const entry = entries[date];
+    
+    if (entry?.hasEntry && entry.entry) {
+      // If there's an existing entry, show detail modal first
+      setSelectedEntry(entry.entry);
+      setIsDetailModalOpen(true);
+    } else {
+      // If no entry exists, open the edit modal directly
+      setIsModalOpen(true);
+    }
   };
 
   const handlePrevMonth = () => {
@@ -330,6 +342,30 @@ const Calendar = () => {
     setCurrentDate(new Date());
   };
 
+  // Add mood colors for the detail modal
+  const moodColors = {
+    happy: 'bg-yellow-100 text-yellow-800',
+    sad: 'bg-gray-100 text-gray-800',
+    neutral: 'bg-gray-100 text-gray-800',
+    excited: 'bg-purple-100 text-purple-800',
+    motivated: 'bg-green-100 text-green-800',
+    stressed: 'bg-red-100 text-red-800',
+    calm: 'bg-blue-100 text-blue-800',
+    fun: 'bg-pink-100 text-pink-800',
+    anxious: 'bg-orange-100 text-orange-800',
+    grateful: 'bg-lime-100 text-lime-800',
+    productive: 'bg-green-100 text-green-800',
+    tired: 'bg-slate-100 text-slate-800',
+    other: 'bg-indigo-100 text-indigo-800',
+  };
+
+  // Handler for editing from detail modal
+  const handleEditFromDetail = (entry: Entry) => {
+    setIsDetailModalOpen(false);
+    setSelectedEntry(null);
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="h-full bg-gradient-to-b from-gray-50 to-white">
       <Card className="h-full border-none shadow-sm">
@@ -443,6 +479,20 @@ const Calendar = () => {
             setSelectedDate(null);
           }}
           onSave={handleSaveEntry}
+        />
+      )}
+
+      {/* Entry Detail Modal */}
+      {isDetailModalOpen && selectedEntry && (
+        <EntryDetailModal
+          entry={selectedEntry}
+          moodColors={moodColors}
+          open={isDetailModalOpen}
+          onClose={() => {
+            setIsDetailModalOpen(false);
+            setSelectedEntry(null);
+          }}
+          onEdit={handleEditFromDetail}
         />
       )}
     </div>
