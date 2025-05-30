@@ -8,27 +8,7 @@ import EntryModal from "./EntryModal";
 import Loader from "@/components/ui/loader";
 import { dailyTaskService } from "@/lib/dailyTaskService";
 import { useToast } from "../hooks/use-toast";
-
-interface Meeting {
-  title: string;
-  time?: string;
-  notes?: string;
-}
-
-interface Task {
-  caption: string;
-  url?: string;
-}
-
-interface Entry {
-  id: string;
-  date: string;
-  meetings: Meeting[];
-  tasks: Task[];
-  mood: string;
-  journalNotes: string;
-  summary?: string;
-}
+import { Meeting, Task, Entry } from "@/types";
 
 interface CalendarEntry {
   date: string;
@@ -95,7 +75,9 @@ const Calendar = () => {
                 })) || [],
               mood: item.mood || "neutral",
               journalNotes: item.journalNotes || "",
-              summary: item.summary?.text || "",
+              summary: typeof item.summary === 'string' 
+                ? item.summary 
+                : (item.summary?.content || item.summary?.text || ""),
             },
           };
         });
@@ -160,11 +142,17 @@ const Calendar = () => {
     switch(mood?.toLowerCase()) {
       case 'happy': return '😊';
       case 'sad': return '😔';
-      case 'angry': return '😠';
-      case 'excited': return '🤩';
-      case 'anxious': return '😰';
-      case 'relaxed': return '😌';
       case 'neutral': return '😐';
+      case 'excited': return '🤩';
+      case 'motivated': return '💪';
+      case 'stressed': return '😤';
+      case 'calm': return '😌';
+      case 'fun': return '🎉';
+      case 'anxious': return '😰';
+      case 'grateful': return '🙏';
+      case 'productive': return '✅';
+      case 'tired': return '😴';
+      case 'other': return '🤔';
       default: return '';
     }
   };

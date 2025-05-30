@@ -26,6 +26,12 @@ interface DailyTaskResponse {
   __v: number;
 }
 
+interface Summary {
+  text: string;
+  content: string;
+  generatedAt?: Date;
+}
+
 interface Meeting {
   _id: string;
   id: string;
@@ -41,16 +47,38 @@ interface Task {
   caption?: string;
 }
 
-interface Summary {
-  _id: string;
-  user: string;
-  entry: string;
-  entryDate: string; // Or Date, if you plan to parse it
-  text: string;
-  aiModel: string;
-  generatedAt: string; // Or Date
-  updatedAt: string; // Or Date
-  __v: number;
+// Add new interfaces for creation payload
+interface CreateMeeting {
+  title?: string;
+  time?: string;
+  notes?: string;
+}
+
+interface CreateTask {
+  url?: string;
+  caption?: string;
+}
+
+interface CreateDailyTask {
+  date: string;
+  meetings: CreateMeeting[];
+  tasks: CreateTask[];
+  mood?:
+    | "happy"
+    | "sad"
+    | "neutral"
+    | "excited"
+    | "motivated"
+    | "stressed"
+    | "calm"
+    | "anxious"
+    | "grateful"
+    | "productive"
+    | "tired"
+    | "other"
+    | "fun";
+  journalNotes?: string;
+  summary?: Summary;
 }
 
 import apiService from "./axiosService";
@@ -65,9 +93,7 @@ export const dailyTaskService = {
     return apiService.get<DailyTaskResponse[]>(`/entries?startDate=${startDate}&endDate=${endDate}`);
   },
   // Create a new daily task entry
-  createDailyTask: (
-    taskData: Omit<DailyTaskResponse, "_id" | "createdAt" | "updatedAt" | "__v">
-  ) => {
+  createDailyTask: (taskData: CreateDailyTask) => {
     return apiService.post<DailyTaskResponse>("/entries", taskData);
   },
   // Update an existing daily task entry
