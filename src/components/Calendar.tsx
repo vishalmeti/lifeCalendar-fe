@@ -694,6 +694,7 @@ const Calendar = () => {
             }}
             onSave={handleSaveEntry}
             isSaving={isSaving}
+            isDateDisabled={true} // Disable date editing when opened from calendar
           />
         )}
 

@@ -292,6 +292,7 @@ const Dashboard = () => {
             setEditingEntry(null);
           }}
           isSaving={isSaving}
+          isDateDisabled={true} // Allow date editing when opened from dashboard
         />
       )}
 

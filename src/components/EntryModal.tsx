@@ -33,9 +33,10 @@ interface EntryModalProps {
   onSave: (entry: Omit<Entry, 'id' | 'summary'>) => void;
   onClose: () => void;
   isSaving?: boolean; // Add a new prop to track saving state
+  isDateDisabled?: boolean; // Add new prop to control if date field is disabled
 }
 
-const EntryModal = ({ entry, onSave, onClose, isSaving }: EntryModalProps) => {
+const EntryModal = ({ entry, onSave, onClose, isSaving, isDateDisabled = false }: EntryModalProps) => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [meetings, setMeetings] = useState<Meeting[]>([{ title: '', time: '', amPm: 'AM', notes: '' }]);
   const [tasks, setTasks] = useState<Task[]>([{ caption: '', url: '' }]);
@@ -135,6 +136,7 @@ const EntryModal = ({ entry, onSave, onClose, isSaving }: EntryModalProps) => {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              disabled={isDateDisabled} // Disable date input if prop is true
             />
           </div>
 
