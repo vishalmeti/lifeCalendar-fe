@@ -34,13 +34,13 @@ const Dashboard = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
 
   useEffect(() => {
-    const fetchYesterdayTask = async () => {
+    const fetchTodaysData = async () => {
       setIsLoading(true); // Set isLoading to true before fetching
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const year = yesterday.getFullYear();
-      const month = (yesterday.getMonth() + 1).toString().padStart(2, '0');
-      const day = yesterday.getDate().toString().padStart(2, '0');
+      const todday = new Date();
+      todday.setDate(todday.getDate());
+      const year = todday.getFullYear();
+      const month = (todday.getMonth() + 1).toString().padStart(2, '0');
+      const day = todday.getDate().toString().padStart(2, '0');
       const formattedDate = `${year}-${month}-${day}`;
 
       try {
@@ -79,7 +79,7 @@ const Dashboard = () => {
       }
     };
 
-    fetchYesterdayTask();
+    fetchTodaysData();
   }, [toast]); // Empty dependency array ensures this runs only once on mount
 
   const moodColors: MoodColors = { // Ensure this object implements MoodColors
