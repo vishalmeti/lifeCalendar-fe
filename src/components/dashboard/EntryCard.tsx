@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import AISummary from './AISummary';
 import MeetingsSection from './MeetingsSection';
 import TasksSection from './TasksSection';
@@ -92,6 +91,3 @@ const EntryCard = ({ entry, moodColors, onEdit, onDelete, onCardClick }: EntryCa
 };
 
 export default EntryCard;
-
-// Export Entry interface to be used in Dashboard.tsx
-// export type { Entry }; // Already exported above

@@ -10,6 +10,7 @@ import { dailyTaskService } from '@/lib/dailyTaskService';
 import { useToast } from '../hooks/use-toast';
 import Loader from './ui/loader';
 import { Meeting, Task, Entry as EntryType, MoodColors } from '@/types';
+import ConfirmationModal from './ui/confirmation-modal';
 
 // Extend or redefine based on EntryCard's export
 export interface Entry extends EntryCardType {
@@ -32,6 +33,10 @@ const Dashboard = () => {
   // New state for detail modal
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  
+  // New state for delete confirmation modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTodaysData = async () => {
@@ -147,8 +152,29 @@ const Dashboard = () => {
     setShowDetailModal(false);
   };
 
-  const handleDeleteEntry = (entryId: string) => {
-    setEntries(entries.filter(entry => entry.id !== entryId));
+  // Store entry ID to delete and show confirmation modal instead of deleting immediately
+  const confirmDeleteEntry = (entryId: string) => {
+    setEntryToDelete(entryId);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteEntry = async (entryId: string) => {
+    try {
+      await dailyTaskService.deleteDailyTask(entryId);
+      setEntries(entries.filter(entry => entry.id !== entryId));
+      toast({
+        title: "Entry deleted",
+        description: "Your entry has been successfully deleted.",
+        variant: "success",
+      });
+    } catch (error) {
+      toast({
+        title: "Error deleting entry",
+        description: "There was a problem deleting your entry.",
+        variant: "destructive",
+      });
+      console.error('Error deleting entry:', error);
+    }
   };
 
   const openNewEntryModal = () => {
@@ -181,8 +207,8 @@ const Dashboard = () => {
               entry={entry}
               moodColors={moodColors}
               onEdit={handleEditEntry}
-              onDelete={handleDeleteEntry}
-              onCardClick={handleCardClick} // Add the onCardClick handler
+              onDelete={confirmDeleteEntry}
+              onCardClick={handleCardClick}
             />
           ))}
 
@@ -215,6 +241,21 @@ const Dashboard = () => {
           onEdit={handleEditEntry}
         />
       )}
+
+      {/* Delete confirmation modal */}
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onConfirm={async () => {
+          if (entryToDelete) {
+            await handleDeleteEntry(entryToDelete);
+            setEntryToDelete(null);
+          }
+          setShowDeleteModal(false);
+        }}
+        onCancel={() => setShowDeleteModal(false)}
+        title="Confirm Deletion"
+        message="Are you sure you want to delete this entry? This action cannot be undone."
+      />
     </div>
   );
 };
