@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Edit, X } from 'lucide-react';
+import { Edit, X, Trash } from 'lucide-react';
 
 import AISummary from './AISummary';
 import MeetingsSection from './MeetingsSection';
@@ -27,6 +27,7 @@ interface EntryDetailModalProps {
   open: boolean;
   onClose: () => void;
   onEdit: (entry: Entry) => void;
+  onDelete?: (entryId: string) => void; // Add an optional onDelete prop
 }
 
 const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
@@ -35,6 +36,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   open,
   onClose,
   onEdit,
+  onDelete,
 }) => {
   const [activeTab, setActiveTab] = useState('summary');
 
@@ -95,9 +97,24 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="mt-4">
-          <Button onClick={onClose} variant="outline">Close</Button>
-          <Button onClick={() => onEdit(entry)} type='submit' variant="default">Edit Entry</Button>
+        <DialogFooter className="mt-4 flex justify-between">
+          <div>
+            {/* Add Delete button if onDelete prop is provided */}
+            {onDelete && (
+              <Button 
+                onClick={() => onDelete(entry.id)} 
+                variant="destructive"
+                className="mr-2"
+              >
+                <Trash className="w-4 h-4 mr-1" />
+                Delete
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={onClose} variant="outline">Close</Button>
+            <Button onClick={() => onEdit(entry)} type='submit' variant="default">Edit Entry</Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

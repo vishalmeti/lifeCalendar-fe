@@ -9,13 +9,78 @@ import EntryDetailModal from "./dashboard/EntryDetailModal";
 import Loader from "@/components/ui/loader";
 import { dailyTaskService } from "@/lib/dailyTaskService";
 import { useToast } from "../hooks/use-toast";
-import { Meeting, Task, Entry } from "@/types";
+import { Meeting, Task, Entry, Summary } from "@/types";
+import ConfirmationModal from "./ui/confirmation-modal";
+import { type Entry as EntryCardEntry } from "./dashboard/EntryCard";
+
+// Define EntryModalEntry to match EntryModal's expected type
+interface EntryModalEntry {
+  id: string;
+  date: string;
+  meetings: {
+    title: string;
+    time: string;
+    amPm?: 'AM' | 'PM';
+    notes?: string;
+  }[];
+  tasks: {
+    caption: string;
+    url?: string;
+  }[];
+  mood: string;
+  journalNotes: string;
+  summary?: string;
+}
 
 interface CalendarEntry {
   date: string;
   hasEntry: boolean;
   entry?: Entry;
 }
+
+// Type guard function to convert Entry with complex summary to EntryCard.Entry type
+const convertToEntryCardEntry = (entry: Entry): EntryCardEntry => {
+  return {
+    ...entry,
+    summary: typeof entry.summary === 'string' ? entry.summary : 
+             (entry.summary && 'content' in entry.summary ? entry.summary.content : ''),
+    meetings: entry.meetings.map(m => ({
+      title: m.title,
+      time: m.time, // EntryCard.Meeting.time is optional but we're providing it anyway
+      notes: m.notes
+    }))
+  };
+};
+
+// Function to convert EntryCardEntry back to Entry
+const convertToEntry = (entry: EntryCardEntry): Entry => {
+  return {
+    ...entry,
+    summary: entry.summary || '',
+    meetings: entry.meetings.map(m => ({
+      title: m.title,
+      time: m.time || '', // Ensure time is not undefined
+      notes: m.notes
+    }))
+  };
+};
+
+// Function to convert Entry to EntryModalEntry
+const convertToEntryModalEntry = (entry: Entry | null): EntryModalEntry | null => {
+  if (!entry) return null;
+  
+  return {
+    id: entry.id,
+    date: entry.date,
+    meetings: entry.meetings,
+    tasks: entry.tasks,
+    mood: entry.mood,
+    journalNotes: entry.journalNotes,
+    summary: typeof entry.summary === 'string' ? 
+      entry.summary : 
+      (entry.summary && 'content' in entry.summary ? entry.summary.content : '')
+  };
+};
 
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -25,10 +90,19 @@ const Calendar = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
   const { toast } = useToast();
 
   const today = new Date();
   const todayString = today.toISOString().split("T")[0];
+
+  // Add today button functionality
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
 
   // Mock data - replace with actual API calls
   useEffect(() => {
@@ -316,53 +390,190 @@ const Calendar = () => {
 
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  const handleSaveEntry = (entryData: Omit<Entry, "id" | "summary">) => {
+  const handleSaveEntry = async (entryData: Omit<Entry, "id" | "summary">) => {
     if (!selectedDate) return;
-
-    const newEntry: Entry = {
-      ...entryData,
-      id: Date.now().toString(), // Simple ID generation
-      summary: undefined,
-    };
-
-    setEntries((prev) => ({
-      ...prev,
-      [selectedDate]: {
-        date: selectedDate,
-        hasEntry: true,
-        entry: newEntry,
-      },
-    }));
-    setIsModalOpen(false);
-    setSelectedDate(null);
+    
+    setIsSaving(true);
+    
+    try {
+      if (entries[selectedDate]?.hasEntry && entries[selectedDate]?.entry) {
+        // Update existing entry
+        const existingEntry = entries[selectedDate].entry;
+        
+        const updatedEntry = await dailyTaskService.updateDailyTask(existingEntry!.id, {
+          date: entryData.date,
+          meetings: entryData.meetings,
+          tasks: entryData.tasks,
+          mood: entryData.mood,
+          journalNotes: entryData.journalNotes,
+        });
+        
+        console.log('Entry updated:', updatedEntry.data);
+        
+        // Update the entry in state
+        setEntries(prevEntries => ({
+          ...prevEntries,
+          [selectedDate]: {
+            ...prevEntries[selectedDate],
+            entry: {
+              ...existingEntry!,
+              ...entryData,
+              summary: updatedEntry.data.summary?.text || existingEntry?.summary || '',
+            }
+          }
+        }));
+        
+        toast({
+          title: "Entry updated",
+          description: "Your entry has been successfully updated.",
+          variant: "success",
+        });
+      } else {
+        // Create new entry
+        console.log('Creating new entry:', entryData);
+        
+        const newEntryResponse = await dailyTaskService.createDailyTask({
+          date: entryData.date,
+          meetings: entryData.meetings,
+          tasks: entryData.tasks,
+          mood: entryData.mood,
+          journalNotes: entryData.journalNotes,
+        });
+        
+        console.log('New entry created:', newEntryResponse.data);
+        
+        // Add the new entry to state
+        setEntries(prevEntries => ({
+          ...prevEntries,
+          [selectedDate]: {
+            date: selectedDate,
+            hasEntry: true,
+            entry: {
+              id: newEntryResponse.data._id,
+              date: typeof newEntryResponse.data.date === 'string' ? 
+                newEntryResponse.data.date : 
+                new Date(newEntryResponse.data.date).toISOString().split('T')[0],
+              meetings: newEntryResponse.data.meetings.map((m: any) => ({ 
+                title: m.title, 
+                time: m.time, 
+                notes: m.notes 
+              })),
+              tasks: newEntryResponse.data.tasks.map((t: any) => ({ 
+                caption: t.caption, 
+                url: t.url 
+              })),
+              mood: newEntryResponse.data.mood,
+              journalNotes: newEntryResponse.data.journalNotes,
+              summary: newEntryResponse.data.summary?.text || '',
+            }
+          }
+        }));
+        
+        toast({
+          title: "Entry created",
+          description: "Your entry has been successfully created.",
+          variant: "success",
+        });
+      }
+    } catch (error) {
+      console.error('Error saving entry:', error);
+      toast({
+        title: "Error saving entry",
+        description: "There was a problem saving your entry.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsModalOpen(false);
+      setSelectedDate(null);
+      setIsSaving(false);
+    }
   };
 
-  // Add today button functionality
-  const goToToday = () => {
-    setCurrentDate(new Date());
+  // Handle delete entry
+  const confirmDeleteEntry = (entryId: string) => {
+    setEntryToDelete(entryId);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteEntry = async (entryId: string) => {
+    try {
+      console.log('Deleting entry with ID:', entryId);
+      await dailyTaskService.deleteDailyTask(entryId);
+      
+      // Remove entry from state by finding and removing the correct date key
+      const dateToRemove = Object.keys(entries).find(
+        date => entries[date]?.entry?.id === entryId
+      );
+      
+      if (dateToRemove) {
+        setEntries(prevEntries => {
+          const newEntries = {...prevEntries};
+          delete newEntries[dateToRemove];
+          return newEntries;
+        });
+      }
+      
+      toast({
+        title: "Entry deleted",
+        description: "Your entry has been successfully deleted.",
+        variant: "success",
+      });
+      
+      return true;
+    } catch (error) {
+      toast({
+        title: "Error deleting entry",
+        description: "There was a problem deleting your entry.",
+        variant: "destructive",
+      });
+      console.error('Error deleting entry:', error);
+      return false;
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!entryToDelete) return;
+    
+    setIsDeleting(true);
+    
+    try {
+      const success = await handleDeleteEntry(entryToDelete);
+      
+      if (success) {
+        setShowDeleteModal(false);
+        setEntryToDelete(null);
+        setIsDetailModalOpen(false);
+      }
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // Add mood colors for the detail modal
-  const moodColors = {
-    happy: 'bg-yellow-100 text-yellow-800',
-    sad: 'bg-gray-100 text-gray-800',
-    neutral: 'bg-gray-100 text-gray-800',
-    excited: 'bg-purple-100 text-purple-800',
-    motivated: 'bg-green-100 text-green-800',
-    stressed: 'bg-red-100 text-red-800',
-    calm: 'bg-blue-100 text-blue-800',
-    fun: 'bg-pink-100 text-pink-800',
-    anxious: 'bg-orange-100 text-orange-800',
-    grateful: 'bg-lime-100 text-lime-800',
-    productive: 'bg-green-100 text-green-800',
-    tired: 'bg-slate-100 text-slate-800',
-    other: 'bg-indigo-100 text-indigo-800',
+  const getMoodColors = () => {
+    return {
+      happy: 'bg-yellow-100 text-yellow-800',
+      sad: 'bg-gray-100 text-gray-800',
+      neutral: 'bg-gray-100 text-gray-800',
+      excited: 'bg-purple-100 text-purple-800',
+      motivated: 'bg-green-100 text-green-800',
+      stressed: 'bg-red-100 text-red-800',
+      calm: 'bg-blue-100 text-blue-800',
+      fun: 'bg-pink-100 text-pink-800',
+      anxious: 'bg-orange-100 text-orange-800',
+      grateful: 'bg-lime-100 text-lime-800',
+      productive: 'bg-green-100 text-green-800',
+      tired: 'bg-slate-100 text-slate-800',
+      other: 'bg-indigo-100 text-indigo-800',
+    };
   };
 
   // Handler for editing from detail modal
-  const handleEditFromDetail = (entry: Entry) => {
+  const handleEditFromDetail = (entry: EntryCardEntry) => {
     setIsDetailModalOpen(false);
-    setSelectedEntry(null);
+    // Convert back to the main Entry type
+    setSelectedEntry(convertToEntry(entry));
+    setSelectedDate(entry.date);
     setIsModalOpen(true);
   };
 
@@ -468,33 +679,54 @@ const Calendar = () => {
             </div>
           )}
         </CardContent>
+
+        {/* Entry Modal - Using the converter function */}
+        {isModalOpen && selectedDate && (
+          <EntryModal
+            entry={convertToEntryModalEntry(
+              entries[selectedDate]?.entry || 
+              (selectedEntry && selectedEntry.date === selectedDate ? selectedEntry : null)
+            )}
+            onClose={() => {
+              setIsModalOpen(false);
+              setSelectedDate(null);
+              setSelectedEntry(null);
+            }}
+            onSave={handleSaveEntry}
+            isSaving={isSaving}
+          />
+        )}
+
+        {/* Entry Detail Modal */}
+        {isDetailModalOpen && selectedEntry && (
+          <EntryDetailModal
+            entry={convertToEntryCardEntry(selectedEntry)}
+            moodColors={getMoodColors()}
+            open={isDetailModalOpen}
+            onClose={() => {
+              setIsDetailModalOpen(false);
+              setSelectedEntry(null);
+            }}
+            onEdit={handleEditFromDetail}
+            onDelete={confirmDeleteEntry}
+          />
+        )}
+
+        {/* Delete confirmation modal */}
+        <ConfirmationModal
+          isOpen={showDeleteModal}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => {
+            if (!isDeleting) {
+              setShowDeleteModal(false);
+              setEntryToDelete(null);
+            }
+          }}
+          title="Confirm Deletion"
+          message="Are you sure you want to delete this entry? This action cannot be undone."
+          isLoading={isDeleting}
+        />
       </Card>
-
-      {/* Entry Modal */}
-      {isModalOpen && selectedDate && (
-        <EntryModal
-          entry={entries[selectedDate]?.entry || null}
-          onClose={() => {
-            setIsModalOpen(false);
-            setSelectedDate(null);
-          }}
-          onSave={handleSaveEntry}
-        />
-      )}
-
-      {/* Entry Detail Modal */}
-      {isDetailModalOpen && selectedEntry && (
-        <EntryDetailModal
-          entry={selectedEntry}
-          moodColors={moodColors}
-          open={isDetailModalOpen}
-          onClose={() => {
-            setIsDetailModalOpen(false);
-            setSelectedEntry(null);
-          }}
-          onEdit={handleEditFromDetail}
-        />
-      )}
     </div>
   );
 };
