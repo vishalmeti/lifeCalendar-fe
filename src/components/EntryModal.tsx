@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import Loader from './ui/loader';
 
 interface Meeting {
   title: string;
@@ -31,9 +32,10 @@ interface EntryModalProps {
   entry?: Entry | null;
   onSave: (entry: Omit<Entry, 'id' | 'summary'>) => void;
   onClose: () => void;
+  isSaving?: boolean; // Add a new prop to track saving state
 }
 
-const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
+const EntryModal = ({ entry, onSave, onClose, isSaving }: EntryModalProps) => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [meetings, setMeetings] = useState<Meeting[]>([{ title: '', time: '', amPm: 'AM', notes: '' }]);
   const [tasks, setTasks] = useState<Task[]>([{ caption: '', url: '' }]);
@@ -296,8 +298,12 @@ const EntryModal = ({ entry, onSave, onClose }: EntryModalProps) => {
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white">
-              {entry ? 'Update Entry' : 'Save Entry'}
+            <Button 
+              type="submit" 
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              disabled={isSaving} // Disable button when saving
+            >
+              {isSaving ? <Loader size="sm" /> : (entry ? 'Update Entry' : 'Save Entry')}
             </Button>
           </div>
         </form>

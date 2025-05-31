@@ -29,6 +29,7 @@ const Dashboard = () => {
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Add isLoading state
+  const [isSaving, setIsSaving] = useState(false); // Add state for tracking entry saving
   
   // New state for detail modal
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
@@ -104,6 +105,7 @@ const Dashboard = () => {
   };
 
   const handleSaveEntry =async (entryData: Omit<Entry, 'id' | 'summary' | 'createdAt' | 'updatedAt'>) => {
+    setIsSaving(true); // Set isSaving to true when starting to save
     if (editingEntry) {
       setEntries(entries.map(entry =>
         entry.id === editingEntry.id
@@ -143,6 +145,7 @@ const Dashboard = () => {
     }
     setShowEntryModal(false);
     setEditingEntry(null);
+    setIsSaving(false); // Reset isSaving state after saving
   };
 
   const handleEditEntry = (entry: Entry) => {
@@ -228,6 +231,7 @@ const Dashboard = () => {
             setShowEntryModal(false);
             setEditingEntry(null);
           }}
+          isSaving={isSaving}
         />
       )}
 

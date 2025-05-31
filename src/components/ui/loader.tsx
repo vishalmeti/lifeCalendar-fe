@@ -57,7 +57,6 @@ const Loader: React.FC<LoaderProps> = ({
               <motion.div
                 key={i}
                 className="rounded-md bg-primary"
-                initial={{ opacity: 0.2 }}
                 animate={{ 
                   opacity: [0.2, 1, 0.2],
                   scale: [0.8, 1, 0.8]
@@ -66,7 +65,9 @@ const Loader: React.FC<LoaderProps> = ({
                   duration: 1.5,
                   repeat: Infinity,
                   delay: i * 0.1,
-                  ease: "easeInOut"
+                  ease: "easeInOut",
+                  repeatType: "loop",
+                  times: [0, 0.5, 1]
                 }}
               />
             ))}
@@ -88,7 +89,9 @@ const Loader: React.FC<LoaderProps> = ({
                   duration: 0.8,
                   repeat: Infinity,
                   delay: i * 0.2,
-                  ease: "easeInOut"
+                  ease: "easeInOut",
+                  repeatType: "loop",
+                  times: [0, 0.5, 1]
                 }}
               />
             ))}
@@ -98,20 +101,27 @@ const Loader: React.FC<LoaderProps> = ({
       case 'spinner':
       default:
         return (
-          <motion.div
-            className={`
-              ${sizeClasses[size]}
-              rounded-full
-              border-primary/20
-              border-t-primary
-            `}
-            animate={{ rotate: 360 }}
-            transition={{
-              loop: Infinity,
-              ease: 'linear',
-              duration: 1,
-            }}
-          />
+          <div className="relative">
+            <motion.div
+              className={`
+                ${sizeClasses[size]}
+                rounded-full
+                border-primary/20
+                border-t-primary
+                absolute
+                top-0
+                left-0
+              `}
+              animate={{ rotate: 360 }}
+              transition={{
+                repeat: Infinity,
+                repeatType: "loop",
+                ease: 'linear',
+                duration: 1,
+              }}
+            />
+            <div className={`${sizeClasses[size]} invisible`} aria-hidden="true"></div>
+          </div>
         );
     }
   };
@@ -127,6 +137,8 @@ const Loader: React.FC<LoaderProps> = ({
             duration: 1.5,
             repeat: Infinity,
             ease: 'easeInOut',
+            repeatType: "loop",
+            times: [0, 0.5, 1]
           }}
         >
           {text}
