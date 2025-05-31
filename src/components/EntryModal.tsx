@@ -94,29 +94,21 @@ const EntryModal = ({ entry, onSave, onClose, isSaving }: EntryModalProps) => {
     setTasks(updated);
   };
 
+  // Helper function to render required field indicator - now empty since nothing is required
+  const requiredStar = () => <></>;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate required fields
-    if (!mood) {
-      alert("Please select a mood");
-      return;
-    }
-
-    const validMeetings = meetings.filter(m => m.title.trim() !== '' && m.time.trim() !== '');
-    const validTasks = tasks.filter(t => t.caption.trim() !== '');
-
+    // No validation needed - submit all data as is
     onSave({
       date,
-      meetings: validMeetings,
-      tasks: validTasks,
+      meetings, // No filtering for valid meetings
+      tasks,    // No filtering for valid tasks
       mood,
       journalNotes
     });
   };
-
-  // Helper function to render required field indicator
-  const requiredStar = () => <span className="text-red-500 ml-1">*</span>;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -137,13 +129,12 @@ const EntryModal = ({ entry, onSave, onClose, isSaving }: EntryModalProps) => {
           {/* Date */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Date{requiredStar()}
+              Date
             </label>
             <Input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              required
             />
           </div>
 
@@ -151,7 +142,7 @@ const EntryModal = ({ entry, onSave, onClose, isSaving }: EntryModalProps) => {
           <div>
             <div className="flex justify-between items-center mb-3">
               <label className="block text-sm font-medium text-gray-700">
-                Meetings{requiredStar()}
+                Meetings
               </label>
               <Button type="button" onClick={addMeeting} size="sm" variant="outline">
                 <Plus className="w-4 h-4 mr-1" />
@@ -166,7 +157,6 @@ const EntryModal = ({ entry, onSave, onClose, isSaving }: EntryModalProps) => {
                       placeholder="Meeting title"
                       value={meeting.title}
                       onChange={(e) => updateMeeting(index, 'title', e.target.value)}
-                      required
                     />
                     {meetings.length > 1 && (
                       <Button
@@ -186,7 +176,6 @@ const EntryModal = ({ entry, onSave, onClose, isSaving }: EntryModalProps) => {
                         placeholder="Time (e.g., 10:00)"
                         value={meeting.time}
                         onChange={(e) => updateMeeting(index, 'time', e.target.value)}
-                        required
                       />
                     </div>
                     <div className="w-24">
@@ -219,7 +208,7 @@ const EntryModal = ({ entry, onSave, onClose, isSaving }: EntryModalProps) => {
           <div>
             <div className="flex justify-between items-center mb-3">
               <label className="block text-sm font-medium text-gray-700">
-                Tasks{requiredStar()}
+                Tasks
               </label>
               <Button type="button" onClick={addTask} size="sm" variant="outline">
                 <Plus className="w-4 h-4 mr-1" />
@@ -235,7 +224,6 @@ const EntryModal = ({ entry, onSave, onClose, isSaving }: EntryModalProps) => {
                       value={task.caption}
                       onChange={(e) => updateTask(index, 'caption', e.target.value)}
                       rows={8}
-                      required
                     />
                     {tasks.length > 1 && (
                       <Button
@@ -263,14 +251,13 @@ const EntryModal = ({ entry, onSave, onClose, isSaving }: EntryModalProps) => {
           {/* Mood */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Mood{requiredStar()}
+              Mood
             </label>
             <Select 
               value={mood} 
-              onValueChange={setMood} 
-              required
+              onValueChange={setMood}
             >
-              <SelectTrigger className={!mood ? "border-red-500" : ""}>
+              <SelectTrigger>
                 <SelectValue placeholder="Select your mood" />
               </SelectTrigger>
               <SelectContent>

@@ -99,7 +99,7 @@ export const dailyTaskService = {
   // Update an existing daily task entry
   updateDailyTask: (
     id: string,
-    taskData: Omit<DailyTaskResponse, "_id" | "createdAt" | "updatedAt" | "__v">
+    taskData: CreateDailyTask
   ) => {
     return apiService.put<DailyTaskResponse>(`/entries/${id}`, taskData);
   },

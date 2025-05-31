@@ -38,6 +38,7 @@ const Dashboard = () => {
   // New state for delete confirmation modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false); // Add state for tracking entry deletion
 
   useEffect(() => {
     const fetchTodaysData = async () => {
@@ -104,48 +105,78 @@ const Dashboard = () => {
     other: 'bg-indigo-100 text-indigo-800',
   };
 
-  const handleSaveEntry =async (entryData: Omit<Entry, 'id' | 'summary' | 'createdAt' | 'updatedAt'>) => {
+  const handleSaveEntry = async (entryData: Omit<Entry, 'id' | 'summary' | 'createdAt' | 'updatedAt'>) => {
     setIsSaving(true); // Set isSaving to true when starting to save
-    if (editingEntry) {
-      setEntries(entries.map(entry =>
-        entry.id === editingEntry.id
-          ? {
-              ...editingEntry, // Preserve existing fields like id, summary
-              ...entryData, // Apply new data
-              // summary: 'Updated entry: AI analysis will be generated based on your latest inputs...' // Backend should handle summary generation
-            }
-          : entry
-      ));
-    } else {
-      console.log('Saving new entry:', entryData);
-
-      // const newEntry: Entry = {
-      //   ...entryData,
-      //   id: Date.now().toString(),
-      //   // summary: 'AI is analyzing your entry and will provide insights...' // Backend should handle summary generation
-      // };
-      const newEntry = await dailyTaskService.createDailyTask({
-        date: entryData.date,
-        meetings: entryData.meetings,
-        tasks: entryData.tasks,
-        mood: entryData.mood,
-        journalNotes: entryData.journalNotes,
-      })
-      console.log('New entry created:', newEntry.data);
-      setEntries([{
-        id: newEntry.data._id, // Use _id from backend
-        date: typeof newEntry.data.date === 'string' ? newEntry.data.date : new Date(newEntry.data.date).toISOString().split('T')[0],
-        meetings: newEntry.data.meetings.map((m: any) => ({ title: m.title, time: m.time, notes: m.notes })),
-        tasks: newEntry.data.tasks.map((t: any) => ({ caption: t.caption, url: t.url })),
-        mood: newEntry.data.mood,
-        journalNotes: newEntry.data.journalNotes,
-        summary: newEntry.data.summary?.text || '', // Extract content if summary is an object
+    try {
+      if (editingEntry) {
+        // API call to update the entry
+        const updatedEntry = await dailyTaskService.updateDailyTask(editingEntry.id, {
+          date: entryData.date,
+          meetings: entryData.meetings,
+          tasks: entryData.tasks,
+          mood: entryData.mood,
+          journalNotes: entryData.journalNotes,
+        });
+        
+        console.log('Entry updated:', updatedEntry.data);
+        
+        // Update the entry in state
+        setEntries(entries.map(entry =>
+          entry.id === editingEntry.id
+            ? {
+                ...entry,
+                ...entryData,
+                summary: updatedEntry.data.summary?.text || entry.summary || '', // Preserve summary if available
+              }
+            : entry
+        ));
+        
+        toast({
+          title: "Entry updated",
+          description: "Your entry has been successfully updated.",
+          variant: "success",
+        });
+      } else {
+        console.log('Saving new entry:', entryData);
+        
+        const newEntry = await dailyTaskService.createDailyTask({
+          date: entryData.date,
+          meetings: entryData.meetings,
+          tasks: entryData.tasks,
+          mood: entryData.mood,
+          journalNotes: entryData.journalNotes,
+        });
+        
+        console.log('New entry created:', newEntry.data);
+        
+        setEntries([{
+          id: newEntry.data._id, // Use _id from backend
+          date: typeof newEntry.data.date === 'string' ? newEntry.data.date : new Date(newEntry.data.date).toISOString().split('T')[0],
+          meetings: newEntry.data.meetings.map((m: any) => ({ title: m.title, time: m.time, notes: m.notes })),
+          tasks: newEntry.data.tasks.map((t: any) => ({ caption: t.caption, url: t.url })),
+          mood: newEntry.data.mood,
+          journalNotes: newEntry.data.journalNotes,
+          summary: newEntry.data.summary?.text || '', // Extract content if summary is an object
+        }, ...entries]); // Add new entry to the beginning of the list
+        
+        toast({
+          title: "Entry created",
+          description: "Your entry has been successfully created.",
+          variant: "success",
+        });
       }
-      ]); // Add new entry to the list
+    } catch (error) {
+      console.error('Error saving entry:', error);
+      toast({
+        title: "Error saving entry",
+        description: "There was a problem saving your entry.",
+        variant: "destructive",
+      });
+    } finally {
+      setShowEntryModal(false);
+      setEditingEntry(null);
+      setIsSaving(false); // Reset isSaving state after saving
     }
-    setShowEntryModal(false);
-    setEditingEntry(null);
-    setIsSaving(false); // Reset isSaving state after saving
   };
 
   const handleEditEntry = (entry: Entry) => {
@@ -163,13 +194,20 @@ const Dashboard = () => {
 
   const handleDeleteEntry = async (entryId: string) => {
     try {
+      // No need to set isDeleting here as it's now managed in handleConfirmDelete
+      console.log('Deleting entry with ID:', entryId);
       await dailyTaskService.deleteDailyTask(entryId);
+      
+      // Update entries state by removing the deleted entry
       setEntries(entries.filter(entry => entry.id !== entryId));
+      
       toast({
         title: "Entry deleted",
         description: "Your entry has been successfully deleted.",
         variant: "success",
       });
+      
+      return true; // Return success status
     } catch (error) {
       toast({
         title: "Error deleting entry",
@@ -177,6 +215,28 @@ const Dashboard = () => {
         variant: "destructive",
       });
       console.error('Error deleting entry:', error);
+      return false; // Return failure status
+    }
+  };
+  
+  // New function to handle confirm delete with proper async handling
+  const handleConfirmDelete = async () => {
+    if (!entryToDelete) return;
+    
+    // Set loading state to true before starting delete
+    setIsDeleting(true);
+    
+    try {
+      const success = await handleDeleteEntry(entryToDelete);
+      
+      if (success) {
+        // Only close the modal if deletion was successful
+        setShowDeleteModal(false);
+        setEntryToDelete(null);
+      }
+    } finally {
+      // Always reset loading state when done, even if there was an error
+      setIsDeleting(false);
     }
   };
 
@@ -246,19 +306,19 @@ const Dashboard = () => {
         />
       )}
 
-      {/* Delete confirmation modal */}
+      {/* Delete confirmation modal - Updated to use handleConfirmDelete */}
       <ConfirmationModal
         isOpen={showDeleteModal}
-        onConfirm={async () => {
-          if (entryToDelete) {
-            await handleDeleteEntry(entryToDelete);
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          if (!isDeleting) {
+            setShowDeleteModal(false);
             setEntryToDelete(null);
           }
-          setShowDeleteModal(false);
         }}
-        onCancel={() => setShowDeleteModal(false)}
         title="Confirm Deletion"
         message="Are you sure you want to delete this entry? This action cannot be undone."
+        isLoading={isDeleting}
       />
     </div>
   );
