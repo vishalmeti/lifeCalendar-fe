@@ -29,7 +29,7 @@ export const storyBookService = {
 
   // Create a new story
   createStory: (storyData: Partial<Story>) => {
-    return apiService.post<Story>('/stories', storyData);
+    return apiService.post<Story>('/stories/generate', storyData);
   },
 
   // Update an existing story

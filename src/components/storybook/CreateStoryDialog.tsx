@@ -1,15 +1,26 @@
 import { useState } from 'react';
-import { BookMarked, Loader2, Sparkles } from 'lucide-react';
+import { BookMarked, Loader2, Sparkles, CalendarIcon } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Textarea } from '../ui/textarea';
+import { Input } from '../ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Calendar } from '../ui/calendar';
+import { format } from 'date-fns';
+import { Label } from '../ui/label';
 
 interface CreateStoryDialogProps {
   isOpen: boolean;
   isGenerating: boolean;
   onOpenChange: (open: boolean) => void;
-  onGenerate: (period: string, prompt: string) => void;
+  onGenerate: (storyData: StoryGeneratePayload) => void;
+}
+
+interface StoryGeneratePayload {
+  title: string;
+  startDate: string;
+  endDate: string;
+  periodDescription: string;
 }
 
 const CreateStoryDialog = ({ 
@@ -18,24 +29,27 @@ const CreateStoryDialog = ({
   onOpenChange, 
   onGenerate 
 }: CreateStoryDialogProps) => {
-  const [selectedPeriod, setSelectedPeriod] = useState('');
-  const [customPrompt, setCustomPrompt] = useState('');
-
-  const timePeriods = [
-    { value: 'last-week', label: 'Last Week' },
-    { value: 'last-month', label: 'Last Month' },
-    { value: 'last-quarter', label: 'Last Quarter' },
-    { value: 'last-year', label: 'Last Year' },
-    { value: 'custom', label: 'Custom Range' }
-  ];
+  const [title, setTitle] = useState('');
+  const [periodDescription, setPeriodDescription] = useState('');
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   const handleSubmit = () => {
-    onGenerate(selectedPeriod, customPrompt);
+    if (startDate && endDate) {
+      onGenerate({
+        title: title || `My Story: Last Few Days`,
+        startDate: format(startDate, 'yyyy-MM-dd'),
+        endDate: format(endDate, 'yyyy-MM-dd'),
+        periodDescription: periodDescription || `My summary for the above provided date`,
+      });
+    }
   };
 
   const resetForm = () => {
-    setSelectedPeriod('');
-    setCustomPrompt('');
+    setTitle('');
+    setPeriodDescription('');
+    setStartDate(null);
+    setEndDate(null);
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -54,32 +68,73 @@ const CreateStoryDialog = ({
         </DialogHeader>
         <div className="space-y-4 pt-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Time Period
-            </label>
-            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-              <SelectTrigger className="border-purple-200 focus:ring-purple-300">
-                <SelectValue placeholder="Select a time period" />
-              </SelectTrigger>
-              <SelectContent>
-                {timePeriods.map((period) => (
-                  <SelectItem key={period.value} value={period.value}>
-                    {period.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="story-title" className="block text-sm font-medium text-gray-700 mb-2">
+              Story Title
+            </Label>
+            <Input
+              id="story-title"
+              placeholder="My Story: Last Few Days"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="border-purple-200 focus:ring-purple-300"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="start-date" className="block text-sm font-medium text-gray-700 mb-2">
+                Start Date
+              </Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left">
+                    {startDate ? format(startDate, 'PPP') : 'Select start date'}
+                    <CalendarIcon className="w-5 h-5 ml-auto" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent>
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    footer={null}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div>
+              <Label htmlFor="end-date" className="block text-sm font-medium text-gray-700 mb-2">
+                End Date
+              </Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left">
+                    {endDate ? format(endDate, 'PPP') : 'Select end date'}
+                    <CalendarIcon className="w-5 h-5 ml-auto" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent>
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    footer={null}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Story Prompt
-            </label>
+            <Label htmlFor="period-description" className="block text-sm font-medium text-gray-700 mb-2">
+              Period Description
+            </Label>
             <Textarea
-              id="story-prompt"
-              placeholder="Describe what kind of story or reflection you'd like AI to create."
-              value={customPrompt}
-              onChange={(e) => setCustomPrompt(e.target.value)}
+              id="period-description"
+              placeholder="My summary for the above provided date"
+              value={periodDescription}
+              onChange={(e) => setPeriodDescription(e.target.value)}
               rows={3}
               className="border-purple-200 focus:ring-purple-300"
             />
@@ -94,7 +149,7 @@ const CreateStoryDialog = ({
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={!selectedPeriod || !customPrompt.trim() || isGenerating}
+              disabled={isGenerating || !startDate || !endDate}
               className="bg-purple-600 hover:bg-purple-700 text-white transition-colors"
             >
               {isGenerating ? (

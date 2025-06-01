@@ -6,6 +6,13 @@ import { toast } from './ui/use-toast';
 import StoryList from './storybook/StoryList';
 import CreateStoryDialog from './storybook/CreateStoryDialog';
 
+interface StoryGeneratePayload {
+  title: string;
+  startDate: string;
+  endDate: string;
+  periodDescription: string;
+}
+
 const Storybook = () => {
   const [stories, setStories] = useState<Story[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,44 +40,10 @@ const Storybook = () => {
     }
   };
 
-  const handleGenerateStory = async (selectedPeriod: string, customPrompt: string) => {
-    if (!selectedPeriod || !customPrompt.trim()) return;
-
+  const handleGenerateStory = async (storyData: StoryGeneratePayload) => {
     setIsGenerating(true);
     
     try {
-      // Get date range based on selected period
-      const now = new Date();
-      let startDate = new Date();
-      const endDate = now;
-      
-      // Determine start date based on selected period
-      switch (selectedPeriod) {
-        case 'last-week':
-          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        case 'last-month':
-          startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-          break;
-        case 'last-quarter':
-          startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
-          break;
-        case 'last-year':
-          startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-          break;
-        default:
-          // Default to last week if custom or other value
-          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      }
-      
-      // Create story payload
-      const storyData = {
-        title: `My Story: ${getDateRangeLabel(selectedPeriod)}`,
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0],
-        periodDescription: customPrompt
-      };
-      
       // Make API call to create story
       const response = await storyBookService.createStory(storyData);
       
@@ -92,22 +65,6 @@ const Storybook = () => {
     } finally {
       setIsGenerating(false);
       setIsCreateDialogOpen(false); // Close dialog after submission
-    }
-  };
-
-  const getDateRangeLabel = (period: string) => {
-    const now = new Date();
-    switch (period) {
-      case 'last-week': {
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        return `${weekAgo.toLocaleDateString()} - ${now.toLocaleDateString()}`;
-      }
-      case 'last-month': {
-        const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-        return `${monthAgo.toLocaleDateString()} - ${now.toLocaleDateString()}`;
-      }
-      default:
-        return 'Custom Range';
     }
   };
 
