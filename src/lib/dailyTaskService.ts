@@ -116,3 +116,10 @@ export const dailyTaskService = {
     return apiService.get<DailyTaskResponse>(`/entries?startDate=${date}`);
   },
 };
+
+export const aiChatService = {
+  // Fetch AI chat history for a specific date
+  postQuestion: async (question: string) => {
+    return await apiService.post<{ answer: string }>("/chatbot/query", { "queryText": question });
+  }
+}

@@ -6,6 +6,7 @@ import EntryDetailModal from './dashboard/EntryDetailModal';
 import DashboardHeader from './dashboard/DashboardHeader';
 import EntryCard, { type Entry as EntryCardType } from './dashboard/EntryCard';
 import NoEntries from './dashboard/NoEntries';
+import AIChat from './AIChat'; // Import the AIChat component
 import { dailyTaskService } from '@/lib/dailyTaskService';
 import { useToast } from '../hooks/use-toast';
 import Loader from './ui/loader';
@@ -282,6 +283,9 @@ const Dashboard = () => {
           )}
         </div>
       )}
+
+      {/* Add AIChat component */}
+      <AIChat />
 
       {showEntryModal && (
         <EntryModal

@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent } from './ui/card';
 import { cn } from '../lib/utils';
+import { aiChatService } from '../lib/dailyTaskService';
 
 interface ChatMessage {
   id: string;
@@ -33,16 +34,26 @@ What would you like to know about your entries?`,
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(true);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const suggestedQuestions = [
-    "When did I last have a client presentation?",
     "What projects did I work on this month?",
     "Show me my mood patterns over time",
-    "What were my most productive days?",
     "When did I mention feeling stressed?",
     "What meetings have I had recently?"
   ];
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Function to scroll to bottom of messages
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   // Click outside to close chat
   useEffect(() => {
@@ -74,42 +85,34 @@ What would you like to know about your entries?`,
     setMessages(prev => [...prev, userMessage]);
     setCurrentMessage('');
     setIsLoading(true);
+    setShowSuggestions(false); // Hide suggestions when a message is sent
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      // Call the actual AI service
+      const response = await aiChatService.postQuestion(currentMessage);
+      
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: generateAIResponse(userMessage.content),
+        content: response?.data?.answer,
         timestamp: new Date().toISOString()
       };
 
       setMessages(prev => [...prev, aiResponse]);
+    } catch (error) {
+      // Handle error case
+      const errorResponse: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: "I'm sorry, I couldn't process your request at the moment. Please try again later.",
+        timestamp: new Date().toISOString()
+      };
+      
+      setMessages(prev => [...prev, errorResponse]);
+      console.error('AI Chat error:', error);
+    } finally {
       setIsLoading(false);
-    }, 1500);
-  };
-
-  const generateAIResponse = (question: string) => {
-    // Simple response generation based on keywords
-    const lowerQuestion = question.toLowerCase();
-    
-    if (lowerQuestion.includes('client presentation') || lowerQuestion.includes('presentation')) {
-      return `Based on your entries, you had a client presentation on May 25, 2024. This was part of a productive day where you also had a team standup meeting. You noted feeling motivated about the upcoming project launch afterward.`;
     }
-    
-    if (lowerQuestion.includes('mood') || lowerQuestion.includes('feeling')) {
-      return `Looking at your mood patterns, you've been trending toward "productive" emotions recently. On May 25th, you recorded feeling productive and motivated. I can see a positive correlation between your productive moods and days with client interactions.`;
-    }
-    
-    if (lowerQuestion.includes('project') || lowerQuestion.includes('work')) {
-      return `Your recent project activity includes working on a project proposal that you completed on May 25, 2024. You also mentioned reviewing code changes. Your notes indicate strong motivation for an upcoming project launch.`;
-    }
-    
-    if (lowerQuestion.includes('stress') || lowerQuestion.includes('tired')) {
-      return `I haven't found many entries where you mentioned feeling stressed or tired recently. Your latest entries show mostly productive and positive moods. This suggests you've been managing your workload well.`;
-    }
-    
-    return `I've searched through your entries and found some relevant information. Based on your question about "${question}", I can see patterns in your activities and moods. For more specific insights, you might want to ask about particular dates, projects, or feelings you'd like me to analyze.`;
   };
 
   const handleSuggestedQuestion = (question: string) => {
@@ -228,10 +231,13 @@ What would you like to know about your entries?`,
                   </div>
                 </div>
               )}
+
+              {/* Scroll to bottom marker */}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Suggested questions */}
-            {messages.length <= 2 && (
+            {showSuggestions && messages.length <= 2 && (
               <div className="px-4 py-2 border-t border-gray-100">
                 <div className="flex items-center text-xs text-gray-500 mb-2">
                   <Search className="w-3 h-3 mr-1" />
