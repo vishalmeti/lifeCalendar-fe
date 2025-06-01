@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../ui/card
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Story } from '../../lib/storyBookService';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 interface StoryCardProps {
   story: Story;
@@ -29,9 +30,18 @@ const StoryCard = ({ story, onDelete }: StoryCardProps) => {
       <CardHeader className="bg-white pb-3">
         <div className="flex justify-between items-start">
           <div className="flex-1">
-            <CardTitle className="text-xl text-gray-900 mb-2 font-serif">
-              {story.title}
-            </CardTitle>
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <CardTitle className="text-xl text-gray-900 mb-2 font-medium leading-tight line-clamp-2 hover:text-purple-700 transition-colors">
+                    {story.title}
+                  </CardTitle>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  {story.title}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <div className="flex flex-wrap gap-3 text-sm text-gray-500">
               <div className="flex items-center">
                 <Calendar className="w-4 h-4 mr-1" />
@@ -51,7 +61,7 @@ const StoryCard = ({ story, onDelete }: StoryCardProps) => {
               variant={isExpanded ? "default" : "outline"}
               size="sm"
               onClick={toggleExpansion}
-              className={isExpanded ? "bg-purple-600 text-white" : ""}
+              className={isExpanded ? "bg-purple-600 text-white hover:bg-purple-700" : "hover:bg-purple-50"}
             >
               <Eye className="w-4 h-4 mr-1" />
               {isExpanded ? 'Collapse' : 'Read'}
