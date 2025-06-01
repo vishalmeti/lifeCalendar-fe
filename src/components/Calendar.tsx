@@ -695,6 +695,7 @@ const Calendar = () => {
             onSave={handleSaveEntry}
             isSaving={isSaving}
             isDateDisabled={true} // Disable date editing when opened from calendar
+            initialDate={selectedDate} // Pass the selected date to use it in the modal
           />
         )}
 

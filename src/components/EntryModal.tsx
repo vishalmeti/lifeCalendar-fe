@@ -34,10 +34,12 @@ interface EntryModalProps {
   onClose: () => void;
   isSaving?: boolean; // Add a new prop to track saving state
   isDateDisabled?: boolean; // Add new prop to control if date field is disabled
+  initialDate?: string; // Add new prop for setting initial date when opened from calendar
 }
 
-const EntryModal = ({ entry, onSave, onClose, isSaving, isDateDisabled = false }: EntryModalProps) => {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+const EntryModal = ({ entry, onSave, onClose, isSaving, isDateDisabled = false, initialDate }: EntryModalProps) => {
+  // Use initialDate if provided (from calendar), otherwise use today's date
+  const [date, setDate] = useState(initialDate || new Date().toISOString().split('T')[0]);
   const [meetings, setMeetings] = useState<Meeting[]>([{ title: '', time: '', amPm: 'AM', notes: '' }]);
   const [tasks, setTasks] = useState<Task[]>([{ caption: '', url: '' }]);
   const [mood, setMood] = useState('');
@@ -58,14 +60,14 @@ const EntryModal = ({ entry, onSave, onClose, isSaving, isDateDisabled = false }
       setMood(entry.mood);
       setJournalNotes(entry.journalNotes); // Renamed from entry.notes
     } else {
-      // Reset to default for new entry
-      setDate(new Date().toISOString().split('T')[0]);
+      // Reset to default for new entry - use initialDate if provided
+      setDate(initialDate || new Date().toISOString().split('T')[0]);
       setMeetings([{ title: '', time: '', amPm: 'AM', notes: '' }]);
       setTasks([{ caption: '', url: '' }]);
       setMood('');
       setJournalNotes('');
     }
-  }, [entry]);
+  }, [entry, initialDate]);
 
   const addMeeting = () => {
     setMeetings([...meetings, { title: '', time: '', amPm: 'AM', notes: '' }]);
