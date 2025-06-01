@@ -12,6 +12,7 @@ import { useToast } from "../hooks/use-toast";
 import { Meeting, Task, Entry, Summary } from "@/types";
 import ConfirmationModal from "./ui/confirmation-modal";
 import { type Entry as EntryCardEntry } from "./dashboard/EntryCard";
+import AIChat from "./AIChat";
 
 // Define EntryModalEntry to match EntryModal's expected type
 interface EntryModalEntry {
@@ -729,6 +730,9 @@ const Calendar = () => {
           isLoading={isDeleting}
         />
       </Card>
+      
+      {/* Add AI Chat Component */}
+      <AIChat />
     </div>
   );
 };
