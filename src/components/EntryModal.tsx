@@ -40,8 +40,8 @@ interface EntryModalProps {
 const EntryModal = ({ entry, onSave, onClose, isSaving, isDateDisabled = false, initialDate }: EntryModalProps) => {
   // Use initialDate if provided (from calendar), otherwise use today's date
   const [date, setDate] = useState(initialDate || new Date().toISOString().split('T')[0]);
-  const [meetings, setMeetings] = useState<Meeting[]>([{ title: '', time: '', amPm: 'AM', notes: '' }]);
-  const [tasks, setTasks] = useState<Task[]>([{ caption: '', url: '' }]);
+  const [meetings, setMeetings] = useState<Meeting[]>([{ title: 'N/A', time: 'N/A', amPm: 'AM', notes: '' }]);
+  const [tasks, setTasks] = useState<Task[]>([{ caption: 'N/A', url: '' }]);
   const [mood, setMood] = useState('');
   const [journalNotes, setJournalNotes] = useState(''); // Renamed from notes
 
@@ -55,22 +55,22 @@ const EntryModal = ({ entry, onSave, onClose, isSaving, isDateDisabled = false, 
       setDate(entry.date);
       setMeetings(entry.meetings.length > 0 ? 
         entry.meetings.map(m => ({ ...m, amPm: m.amPm || 'AM' })) : 
-        [{ title: '', time: '', amPm: 'AM', notes: '' }]);
-      setTasks(entry.tasks.length > 0 ? entry.tasks : [{ caption: '', url: '' }]);
+        [{ title: 'N/A', time: 'N/A', amPm: 'AM', notes: '' }]);
+      setTasks(entry.tasks.length > 0 ? entry.tasks : [{ caption: 'N/A', url: '' }]);
       setMood(entry.mood);
       setJournalNotes(entry.journalNotes); // Renamed from entry.notes
     } else {
       // Reset to default for new entry - use initialDate if provided
       setDate(initialDate || new Date().toISOString().split('T')[0]);
-      setMeetings([{ title: '', time: '', amPm: 'AM', notes: '' }]);
-      setTasks([{ caption: '', url: '' }]);
+      setMeetings([{ title: 'N/A', time: 'N/A', amPm: 'AM', notes: '' }]);
+      setTasks([{ caption: 'N/A', url: '' }]);
       setMood('');
-      setJournalNotes('');
+      setJournalNotes('N/A');
     }
   }, [entry, initialDate]);
 
   const addMeeting = () => {
-    setMeetings([...meetings, { title: '', time: '', amPm: 'AM', notes: '' }]);
+    setMeetings([...meetings, { title: 'N/A', time: 'N/A', amPm: 'AM', notes: '' }]);
   };
 
   const removeMeeting = (index: number) => {
@@ -84,7 +84,7 @@ const EntryModal = ({ entry, onSave, onClose, isSaving, isDateDisabled = false, 
   };
 
   const addTask = () => {
-    setTasks([...tasks, { caption: '', url: '' }]);
+    setTasks([...tasks, { caption: 'N/A', url: '' }]);
   };
 
   const removeTask = (index: number) => {

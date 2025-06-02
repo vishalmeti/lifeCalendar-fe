@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -28,6 +28,7 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<{field: string, message: string}[]>([]);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,7 +71,7 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
       console.error('Authentication error:', error);
       toast({
         title: "Authentication failed",
-        description: error.response?.data?.message || "Something went wrong. Please try again.",
+        description: error.response?.data?.msg || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -78,7 +79,41 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
     }
   };
 
-  // Check if form is valid
+  // Effect to validate form when inputs change
+  useEffect(() => {
+    if (!isLogin) {
+      validateForm();
+    }
+  }, [isLogin, email, password, confirmPassword, name]);
+
+  // Separate validation function to check inputs and set errors
+  const validateForm = () => {
+    const errors: {field: string, message: string}[] = [];
+      
+    // Name validation (contains only letters and numbers)
+    if (name.trim() !== '' && !/^[a-zA-Z0-9]+$/.test(name.trim())) {
+      errors.push({ field: 'username', message: 'Username must contain only letters and numbers' });
+    }
+    
+    // Password validations
+    if (password.trim() !== '' && password.length < 6) {
+      errors.push({ field: 'password', message: 'Password must be at least 6 characters long' });
+    }
+    
+    if (password.trim() !== '' && !/\d/.test(password)) {
+      errors.push({ field: 'password', message: 'Password must contain at least one number' });
+    }
+    
+    // Confirm password validation
+    if (confirmPassword.trim() !== '' && password !== confirmPassword) {
+      errors.push({ field: 'confirmpassword', message: 'Passwords do not match' });
+    }
+    
+    // Update validation errors state
+    setValidationErrors(errors);
+  };
+
+  // Check if form is valid without setting state
   const isFormValid = () => {
     if (isLogin) {
       return email.trim() !== '' && password.trim() !== '';
@@ -88,9 +123,20 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
         password.trim() !== '' && 
         confirmPassword.trim() !== '' && 
         name.trim() !== '' && 
+        validationErrors.length === 0 &&
+        /^[a-zA-Z0-9]+$/.test(name.trim()) &&
+        password.length >= 6 &&
+        /\d/.test(password) &&
         password === confirmPassword
       );
     }
+  };
+
+  // Helper function to get field-specific error messages
+  const getFieldErrors = (fieldName: string) => {
+    return validationErrors
+      .filter(error => error.field === fieldName)
+      .map(error => error.message);
   };
 
   return (
@@ -112,7 +158,7 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
           {!isLogin && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2 text-left">
-                Full Name
+                User Name
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -125,6 +171,9 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
                   required={!isLogin}
                 />
               </div>
+              {!isLogin && getFieldErrors('username').map((error, index) => (
+                <p key={index} className="text-red-500 text-sm mt-1">{error}</p>
+              ))}
             </div>
           )}
 
@@ -167,6 +216,9 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
+            {!isLogin && getFieldErrors('password').map((error, index) => (
+              <p key={index} className="text-red-500 text-sm mt-1">{error}</p>
+            ))}
           </div>
 
           {!isLogin && (
@@ -192,9 +244,9 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
                   {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              {!isLogin && password !== confirmPassword && confirmPassword.trim() !== '' && (
-                <p className="text-red-500 text-sm mt-1">Passwords don't match</p>
-              )}
+              {!isLogin && getFieldErrors('confirmpassword').map((error, index) => (
+                <p key={index} className="text-red-500 text-sm mt-1">{error}</p>
+              ))}
             </div>
           )}
 
@@ -212,6 +264,7 @@ const AuthModal = ({ onClose, onLogin }: AuthModalProps) => {
               onClick={() => {
                 setIsLogin(!isLogin);
                 setConfirmPassword(''); // Clear confirm password when toggling
+                setValidationErrors([]); // Clear validation errors when toggling
               }}
               className="text-indigo-600 hover:text-indigo-700 text-sm"
             >
