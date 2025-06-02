@@ -70,8 +70,8 @@ const Index = () => {
         return <Calendar />;
       case 'storybook':
         return <Storybook />;
-      case 'chat':
-        return <AIChat />;
+      // case 'chat':
+      //   return <AIChat />;
       default:
         return <Dashboard />;
     }

@@ -16,7 +16,7 @@ const navItems: NavItem[] = [
   { id: 'dashboard', label: 'Daily Entries', icon: Calendar },
   { id: 'calendar', label: 'Calendar', icon: CalendarDays },
   { id: 'storybook', label: 'Storybook', icon: BookOpen },
-  { id: 'chat', label: 'AI Assistant', icon: MessageCircle },
+  // { id: 'chat', label: 'AI Assistant', icon: MessageCircle },
 ];
 
 const SidebarNav = ({ activeSection, onSectionChange }: SidebarNavProps) => {

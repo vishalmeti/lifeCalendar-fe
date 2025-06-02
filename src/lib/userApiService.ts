@@ -46,7 +46,14 @@ export const userApiService = {
 
   // Get current user profile
   getCurrentUser: () => {
-    return apiService.get<UserResponse>('/auth/me');
+    const resp = apiService.get<UserResponse>('/auth/me');
+    return resp.then(response => {
+      if (response.status === 200) {
+        // Store token in local storage
+        localStorage.setItem('user_data', JSON.stringify(response.data));
+      }
+      return response;
+    });
   },
 
   // Update user profile
